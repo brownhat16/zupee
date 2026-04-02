@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "GameBuddy AI",
+    "slug": "gamebuddy-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#07070c"
+    },
+    "android": {
+      "package": "com.gamebuddy.ai"
+    }
+  }
+}

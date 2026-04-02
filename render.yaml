@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: gamebuddy-ai-api
+    env: docker
+    plan: free
+    rootDir: backend
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        value: google/gemma-2-27b-it
+      - key: OPENAI_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: LLM_TEMPERATURE
+        value: "0.2"
+      - key: LLM_TOP_P
+        value: "0.7"
+      - key: LLM_MAX_TOKENS
+        value: "256"
