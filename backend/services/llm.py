@@ -60,10 +60,13 @@ def generate_chat_reply(message: str, personality: str = "savage") -> str:
             top_p=float(os.getenv("LLM_TOP_P", "0.7")),
             max_tokens=int(os.getenv("LLM_MAX_TOKENS", "256")),
             messages=[
-                {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
-                    "content": f"Personality: {personality}\nUser message: {message}",
+                    "content": (
+                        f"{system_prompt}\n\n"
+                        f"Personality: {personality}\n"
+                        f"User message: {message}"
+                    ),
                 },
             ],
         )
