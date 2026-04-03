@@ -1,9 +1,11 @@
 import os
+import logging
 
 from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 def _build_client() -> OpenAI | None:
@@ -35,6 +37,7 @@ def _fallback_reply(message: str, personality: str) -> str:
 def generate_chat_reply(message: str, personality: str = "savage") -> str:
     client = _build_client()
     if client is None:
+        logger.warning("LLM fallback used: no provider API key configured")
         return _fallback_reply(message, personality)
 
     model = (
@@ -50,6 +53,7 @@ def generate_chat_reply(message: str, personality: str = "savage") -> str:
     )
 
     try:
+        logger.info("Attempting LLM chat completion with model=%s base_url=%s", model, os.getenv("OPENAI_BASE_URL"))
         completion = client.chat.completions.create(
             model=model,
             temperature=float(os.getenv("LLM_TEMPERATURE", "0.8")),
@@ -63,6 +67,12 @@ def generate_chat_reply(message: str, personality: str = "savage") -> str:
                 },
             ],
         )
-        return completion.choices[0].message.content or _fallback_reply(message, personality)
-    except Exception:
+        reply = completion.choices[0].message.content
+        if not reply:
+            logger.warning("LLM returned empty content, using fallback reply")
+            return _fallback_reply(message, personality)
+        logger.info("LLM chat completion succeeded with model=%s", model)
+        return reply
+    except Exception as error:
+        logger.exception("LLM chat completion failed: %s", error)
         return _fallback_reply(message, personality)
