@@ -63,7 +63,15 @@ cd frontend
 npm install
 ```
 
-2. If your emulator/device cannot reach localhost, update `frontend/api/client.js` to your machine IP.
+2. Configure the frontend API URL in `frontend/.env`:
+
+```bash
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8000
+```
+
+- Use `http://10.0.2.2:8000` for the Android emulator.
+- Use your machine's LAN IP for a physical device.
+- Use your deployed backend URL for remote testing.
 
 3. Start Expo:
 
@@ -164,3 +172,4 @@ npm run start
 - The app works without external LLM access using built-in fallback responses.
 - Score and streak are stored in `backend/data/state.json`.
 - Personality modes included: `savage` and `chill`.
+- If you see `Cannot connect to Metro`, start Expo again with `cd frontend && npm run start`, then reopen the app on the same network/device.

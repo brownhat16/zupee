@@ -51,6 +51,7 @@ def generate_chat_reply(message: str, personality: str = "savage") -> str:
         "Reply briefly, in playful Hinglish, with Gen-Z energy. "
         "If personality is savage, be lightly savage. If chill, be encouraging."
     )
+    user_prompt = f"Personality: {personality}\nUser message: {message}"
 
     try:
         logger.info("Attempting LLM chat completion with model=%s base_url=%s", model, os.getenv("OPENAI_BASE_URL"))
@@ -61,16 +62,16 @@ def generate_chat_reply(message: str, personality: str = "savage") -> str:
             max_tokens=int(os.getenv("LLM_MAX_TOKENS", "256")),
             messages=[
                 {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
                     "role": "user",
-                    "content": (
-                        f"{system_prompt}\n\n"
-                        f"Personality: {personality}\n"
-                        f"User message: {message}"
-                    ),
+                    "content": user_prompt,
                 },
             ],
         )
-        reply = completion.choices[0].message.content
+        reply = (completion.choices[0].message.content or "").strip()
         if not reply:
             logger.warning("LLM returned empty content, using fallback reply")
             return _fallback_reply(message, personality)

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { askBluff, guessBluff, startBluff } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
@@ -11,10 +11,13 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
   const [question, setQuestion] = useState("");
   const [guess, setGuess] = useState("");
   const [questionsLeft, setQuestionsLeft] = useState(5);
-  const [loading, setLoading] = useState(true);
+  const [isStarting, setIsStarting] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
+    setIsStarting(true);
     startBluff(personality)
       .then((data) => {
         if (!alive) {
@@ -31,7 +34,7 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
       })
       .finally(() => {
         if (alive) {
-          setLoading(false);
+          setIsStarting(false);
         }
       });
 
@@ -40,32 +43,63 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
     };
   }, [personality]);
 
+  useEffect(() => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  const isBusy = isStarting || isSubmitting;
+  const canAsk = Boolean(sessionId) && !isBusy && questionsLeft > 0;
+  const canGuess = Boolean(sessionId) && !isBusy;
+
   const handleAsk = async () => {
-    if (!question.trim() || !sessionId) {
+    if (!question.trim() || !sessionId || isBusy) {
       return;
     }
+    if (questionsLeft <= 0) {
+      setMessages((current) => [
+        ...current,
+        { id: `${Date.now()}-limit`, sender: "ai", text: "Questions khatam. Ab seedha guess maar." },
+      ]);
+      return;
+    }
+
     const nextQuestion = question.trim();
     setQuestion("");
     setMessages((current) => [...current, { id: `${Date.now()}-q`, sender: "user", text: nextQuestion }]);
+
     try {
+      setIsSubmitting(true);
       const response = await askBluff(sessionId, nextQuestion, personality);
       setQuestionsLeft(response.questions_left);
       setMessages((current) => [...current, { id: `${Date.now()}-a`, sender: "ai", text: response.answer }]);
     } catch (error) {
-      setMessages((current) => [...current, { id: `${Date.now()}-e`, sender: "ai", text: "Ab sawaal band. Guess maar." }]);
+      setMessages((current) => [
+        ...current,
+        { id: `${Date.now()}-e`, sender: "ai", text: error.message || "Ab sawaal band. Guess maar." },
+      ]);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGuess = async () => {
-    if (!guess.trim() || !sessionId) {
+    if (!guess.trim() || !sessionId || isBusy) {
       return;
     }
+
     const numericGuess = Number(guess);
-    if (Number.isNaN(numericGuess)) {
+    if (Number.isNaN(numericGuess) || numericGuess < 1 || numericGuess > 50) {
+      setMessages((current) => [
+        ...current,
+        { id: `${Date.now()}-invalid-guess`, sender: "ai", text: "Guess 1 se 50 ke beech ka number hona chahiye." },
+      ]);
       return;
     }
+
+    setGuess("");
     setMessages((current) => [...current, { id: `${Date.now()}-guess`, sender: "user", text: `My guess: ${numericGuess}` }]);
     try {
+      setIsSubmitting(true);
       const response = await guessBluff(sessionId, numericGuess, personality);
       onShowResult({
         title: "Bluff Master",
@@ -74,15 +108,29 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
         streak: response.streak,
       });
     } catch (error) {
-      setMessages((current) => [...current, { id: `${Date.now()}-ge`, sender: "ai", text: "Guess process fail hua." }]);
+      setMessages((current) => [
+        ...current,
+        { id: `${Date.now()}-ge`, sender: "ai", text: error.message || "Guess process fail hua." },
+      ]);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+    >
       <Text style={styles.header}>Bluff Master AI</Text>
       <Text style={styles.meta}>Questions left: {questionsLeft}</Text>
-      <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.chatArea}
+        contentContainerStyle={styles.chatContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {messages.map((message) => (
           <ChatBubble key={message.id} text={message.text} sender={message.sender} />
         ))}
@@ -92,11 +140,11 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
         style={styles.input}
         value={question}
         onChangeText={setQuestion}
-        placeholder="Ask a question..."
+        placeholder={questionsLeft > 0 ? "Ask a question..." : "No questions left. Make your guess."}
         placeholderTextColor="#5c647d"
-        editable={!loading}
+        editable={canAsk}
       />
-      <PrimaryButton label="Ask AI" onPress={handleAsk} disabled={loading} />
+      <PrimaryButton label="Ask AI" onPress={handleAsk} disabled={!canAsk} />
 
       <TextInput
         style={styles.input}
@@ -105,11 +153,11 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
         placeholder="Guess the number (1-50)"
         placeholderTextColor="#5c647d"
         keyboardType="number-pad"
-        editable={!loading}
+        editable={canGuess}
       />
-      <PrimaryButton label="Guess Answer" onPress={handleGuess} variant="ghost" disabled={loading} />
-      <PrimaryButton label="Back" onPress={onBack} variant="ghost" />
-    </View>
+      <PrimaryButton label="Guess Answer" onPress={handleGuess} variant="ghost" disabled={!canGuess} />
+      <PrimaryButton label="Back" onPress={onBack} variant="ghost" disabled={isSubmitting} />
+    </KeyboardAvoidingView>
   );
 }
 
