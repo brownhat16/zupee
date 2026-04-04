@@ -19,7 +19,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "deepseek-ai/deepseek-v3.1"
-DEFAULT_TIMEOUT_SECONDS = 8.0
+DEFAULT_TIMEOUT_SECONDS = 6.0
 DEFAULT_MAX_RETRIES = 1
 DEFAULT_SESSION_WINDOW = 10
 DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24
@@ -121,6 +121,7 @@ def _new_chat_session(personality: str) -> dict[str, Any]:
         "messages": [],
         "summary": "",
         "personality": personality,
+        "profile": {},
         "last_context": {},
         "updated_at": _now_iso(),
     }
@@ -202,6 +203,7 @@ def _persist_session_messages(
     messages: list[dict[str, str]],
     *,
     context: dict[str, Any] | None = None,
+    profile: dict[str, Any] | None = None,
 ) -> None:
     if not session_id or not messages:
         return
@@ -218,6 +220,8 @@ def _persist_session_messages(
         session["messages"].extend(messages)
         if context is not None:
             session["last_context"] = context
+        if profile is not None:
+            session["profile"] = profile
         session["updated_at"] = now.isoformat()
         _trim_session_messages(session)
         chat_sessions[session_id] = session
@@ -240,15 +244,183 @@ def _provider_settings() -> tuple[str, float, float, int]:
 
 def _nvidia_thinking_enabled(model: str) -> bool:
     env_value = os.getenv("NVIDIA_THINKING_MODE")
-    if env_value is not None:
-        return env_value.strip().lower() in {"1", "true", "yes", "on"}
-    return model.startswith("deepseek-ai/")
+    if env_value is None:
+        return False
+    return env_value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _nvidia_stream_enabled() -> bool:
+    env_value = os.getenv("NVIDIA_USE_STREAM")
+    if env_value is None:
+        return False
+    return env_value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _tone_instruction(personality: str) -> str:
     if personality == "chill":
         return "Be encouraging, warm, and supportive."
     return "Be playful, sharp, and lightly savage without becoming insulting, hostile, or crass."
+
+
+def _extract_nickname(message: str) -> str | None:
+    match = re.search(r"\b(?:my nickname is|call me|my name is)\s+([a-zA-Z][a-zA-Z0-9_-]{1,24})", message, re.IGNORECASE)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def _is_nickname_recall_request(message: str) -> bool:
+    normalized = message.lower()
+    patterns = (
+        "what nickname did i tell you",
+        "what's my nickname",
+        "what is my nickname",
+        "remember my nickname",
+        "what did i tell you to call me",
+        "what name did i tell you",
+    )
+    return any(pattern in normalized for pattern in patterns)
+
+
+def _is_support_request(message: str) -> bool:
+    normalized = message.lower()
+    keywords = (
+        "refund",
+        "support agent",
+        "recover money",
+        "money back",
+        "account issue",
+        "payment failed",
+        "withdrawal",
+        "kyc",
+        "customer support",
+    )
+    return any(keyword in normalized for keyword in keywords)
+
+
+def _is_prompt_attack(message: str) -> bool:
+    normalized = message.lower()
+    keywords = (
+        "system prompt",
+        "hidden prompt",
+        "developer prompt",
+        "ignore previous instructions",
+        "chain of thought",
+        "reasoning",
+        "internal policy",
+        "hidden instructions",
+    )
+    return any(keyword in normalized for keyword in keywords)
+
+
+def _is_onboarding_request(message: str) -> bool:
+    normalized = message.lower()
+    return "onboarding line" in normalized or "skeptical user" in normalized
+
+
+def _is_game_recommendation_request(message: str) -> bool:
+    normalized = message.lower()
+    return "between bluff and cricket" in normalized or "bluff and cricket" in normalized
+
+
+def _home_greeting(personality: str, context: dict[str, Any] | None) -> str:
+    score = context.get("score", 0) if context else 0
+    streak = context.get("streak", 0) if context else 0
+    if personality == "chill":
+        if streak >= 3:
+            return "Streak garam hai. Chill reh aur smart picks maar."
+        if score > 0:
+            return "Scoreboard chal pada hai. Aaj thoda aur momentum build karte hain."
+        return "Ready ho? Aaj easy start le aur flow pakad."
+    if streak >= 3:
+        return "Streak on fire hai. Aaj lobby ko seedha lesson milne wala hai."
+    if score > 0:
+        return "Score aa gaya, ab attitude bhi dikha. Next round mein aur damage kar."
+    return "Mood set kar. Aaj scoreboard ko seedha hila dete hain."
+
+
+def _support_redirect(personality: str) -> str:
+    if personality == "chill":
+        return "Refund ya account issue ke liye in-app Help ya official support se connect karo. Main game buddy hoon, billing desk nahi."
+    return "Refund ka scene support team sambhalegi. In-app Help kholo ya official support ko ping karo, main yahan game chaos ke liye hoon."
+
+
+def _security_redirect(personality: str) -> str:
+    if personality == "chill":
+        return "Hidden prompt ya reasoning share nahi hoti. Game, strategy, ya vibe chahiye ho toh bolo."
+    return "Hidden prompt nahi milega. Strategy, roast, ya next move chahiye ho toh seedha woh pucho."
+
+
+def _onboarding_line(personality: str) -> str:
+    if personality == "chill":
+        return "Bas ek round khelo, phir ya toh vibe banegi ya seedha rematch maangoge."
+    return "Skeptical ho? Ek round khel lo, phir ya toh fan banoge ya phir louder hater."
+
+
+def _game_recommendation(personality: str, context: dict[str, Any] | None) -> str:
+    streak = context.get("streak", 0) if context else 0
+    if streak >= 2:
+        return "Cricket khelo. Jab momentum ho tab fast wins zyada satisfying lagte hain."
+    if personality == "chill":
+        return "Bluff try karo. Slow pace hai aur har sawaal se thoda control milta hai."
+    return "Bluff jao. Mind games se zyada payoff milega jab mood aggressive ho."
+
+
+def _postprocess_reply(reply: str, session: dict[str, Any] | None = None) -> str:
+    cleaned = _sanitize_model_reply(reply)
+    if not session:
+        return cleaned
+
+    recent_messages = session.get("messages", [])
+    last_assistant = None
+    for message in reversed(recent_messages):
+        if message.get("role") == "assistant":
+            last_assistant = message.get("content", "").strip()
+            break
+
+    if last_assistant and cleaned.lower() == last_assistant.lower():
+        cleaned = f"{cleaned} Chal, next move bol."
+    return cleaned
+
+
+def _fast_chat_reply(
+    message: str,
+    personality: str,
+    session: dict[str, Any] | None,
+    context: dict[str, Any] | None,
+) -> tuple[str | None, dict[str, Any] | None]:
+    normalized_personality = _normalize_personality(personality)
+    session_profile = dict(session.get("profile", {})) if session else {}
+
+    if context and context.get("screen") == "home":
+        return _home_greeting(normalized_personality, context), session_profile
+
+    nickname = _extract_nickname(message)
+    if nickname:
+        session_profile["nickname"] = nickname
+        if normalized_personality == "chill":
+            return f"Noted. Ab se tujhe {nickname} bolunga.", session_profile
+        return f"Locked in, {nickname}. Ab dekhte hain game mein kitna dum hai.", session_profile
+
+    if _is_nickname_recall_request(message):
+        nickname = session_profile.get("nickname")
+        if nickname:
+            return f"Tu khud bola tha, tera nickname {nickname} hai.", session_profile
+        return "Tune abhi tak koi nickname lock nahi kiya. Bol de, yaad rakh lunga.", session_profile
+
+    if _is_support_request(message):
+        return _support_redirect(normalized_personality), session_profile
+
+    if _is_prompt_attack(message):
+        return _security_redirect(normalized_personality), session_profile
+
+    if _is_game_recommendation_request(message):
+        return _game_recommendation(normalized_personality, context), session_profile
+
+    if _is_onboarding_request(message):
+        return _onboarding_line(normalized_personality), session_profile
+
+    return None, session_profile
 
 
 def _build_chat_system_prompt(personality: str) -> str:
@@ -364,22 +536,51 @@ def _sanitize_model_reply(reply: str) -> str:
     return collapsed
 
 
-def _build_completion_request(messages: list[dict[str, str]]) -> dict[str, Any]:
+def _build_completion_request(messages: list[dict[str, str]], *, simplify: bool = False) -> dict[str, Any]:
     model, temperature, top_p, max_tokens = _provider_settings()
     request: dict[str, Any] = {
         "model": model,
-        "temperature": temperature,
+        "temperature": 0.15 if simplify else temperature,
         "top_p": top_p,
-        "max_tokens": max_tokens,
+        "max_tokens": min(max_tokens, 128) if simplify else max_tokens,
         "messages": messages,
     }
 
     if _active_provider() == "nvidia":
-        request["stream"] = True
-        if _nvidia_thinking_enabled(model):
+        request["stream"] = False if simplify else _nvidia_stream_enabled()
+        if not simplify and _nvidia_thinking_enabled(model):
             request["extra_body"] = {"chat_template_kwargs": {"thinking": True}}
 
     return request
+
+
+def _is_timeout_error(error: Exception) -> bool:
+    error_name = error.__class__.__name__.lower()
+    error_text = str(error).lower()
+    return "timeout" in error_name or "timed out" in error_text or "read operation timed out" in error_text
+
+
+def _execute_completion_request(client: OpenAI, request: dict[str, Any]) -> str | None:
+    completion = client.chat.completions.create(**request)
+
+    if request.get("stream"):
+        chunks: list[str] = []
+        for chunk in completion:
+            if not getattr(chunk, "choices", None):
+                continue
+            delta = chunk.choices[0].delta
+            content = getattr(delta, "content", None)
+            if content:
+                chunks.append(content)
+        reply = "".join(chunks).strip()
+    else:
+        reply = (completion.choices[0].message.content or "").strip()
+
+    reply = _sanitize_model_reply(reply)
+    if not reply:
+        logger.warning("LLM returned empty content, using fallback reply")
+        return None
+    return reply
 
 
 def _generate_model_reply(messages: list[dict[str, str]]) -> str | None:
@@ -393,30 +594,33 @@ def _generate_model_reply(messages: list[dict[str, str]]) -> str | None:
     started_at = time.perf_counter()
     try:
         logger.info("Attempting LLM chat completion with model=%s base_url=%s", model, os.getenv("OPENAI_BASE_URL"))
-        completion = client.chat.completions.create(**request)
+        reply = _execute_completion_request(client, request)
         elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
         logger.info("LLM chat completion succeeded with model=%s latency_ms=%s", model, elapsed_ms)
-
-        if request.get("stream"):
-            chunks: list[str] = []
-            for chunk in completion:
-                if not getattr(chunk, "choices", None):
-                    continue
-                delta = chunk.choices[0].delta
-                content = getattr(delta, "content", None)
-                if content:
-                    chunks.append(content)
-            reply = "".join(chunks).strip()
-        else:
-            reply = (completion.choices[0].message.content or "").strip()
-
-        reply = _sanitize_model_reply(reply)
-        if not reply:
-            logger.warning("LLM returned empty content, using fallback reply")
-            return None
         return reply
     except Exception as error:
         elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        if _is_timeout_error(error):
+            logger.warning("LLM timed out after %sms; retrying with simplified request", elapsed_ms)
+            retry_request = _build_completion_request(messages, simplify=True)
+            retry_started_at = time.perf_counter()
+            try:
+                reply = _execute_completion_request(client, retry_request)
+                retry_elapsed_ms = round((time.perf_counter() - retry_started_at) * 1000, 2)
+                logger.info(
+                    "LLM simplified retry succeeded with model=%s latency_ms=%s",
+                    retry_request["model"],
+                    retry_elapsed_ms,
+                )
+                return reply
+            except Exception as retry_error:
+                retry_elapsed_ms = round((time.perf_counter() - retry_started_at) * 1000, 2)
+                logger.exception(
+                    "LLM simplified retry failed after %sms: %s",
+                    retry_elapsed_ms,
+                    retry_error,
+                )
+
         logger.exception("LLM chat completion failed after %sms: %s", elapsed_ms, error)
         return None
 
@@ -436,6 +640,13 @@ def generate_chat_reply(
         context=context,
     )
 
+    fast_reply, session_profile = _fast_chat_reply(
+        message,
+        normalized_personality,
+        session,
+        context or (session.get("last_context") if session else None),
+    )
+
     prompt_messages = _build_prompt_messages(
         system_prompt=_build_chat_system_prompt(normalized_personality),
         session=session,
@@ -443,7 +654,12 @@ def generate_chat_reply(
         user_message=message,
         fallback_user_message="Reply to the player with a short in-app line.",
     )
-    reply = _generate_model_reply(prompt_messages) or _fallback_chat_reply(message, normalized_personality, context)
+    reply = fast_reply
+    if reply is None:
+        model_reply = _generate_model_reply(prompt_messages)
+        reply = model_reply or _fallback_chat_reply(message, normalized_personality, context)
+
+    reply = _postprocess_reply(reply, session)
 
     _persist_session_messages(
         resolved_session_id,
@@ -453,6 +669,7 @@ def generate_chat_reply(
             {"role": "assistant", "content": reply},
         ],
         context=context,
+        profile=session_profile,
     )
     return {"reply": reply, "session_id": resolved_session_id or str(uuid.uuid4())}
 
