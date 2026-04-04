@@ -8,6 +8,8 @@ import { sendChat } from "../api/client";
 export default function HomeScreen({
   stats,
   personality,
+  chatSessionId,
+  onChatSessionChange,
   onPersonalityChange,
   onPlayCricket,
   onPlayBluff,
@@ -16,10 +18,23 @@ export default function HomeScreen({
 
   useEffect(() => {
     let alive = true;
-    sendChat("Give me a short welcome line for the home screen.", personality)
+    sendChat(
+      "Give me a short welcome line for the home screen.",
+      personality,
+      chatSessionId,
+      {
+        screen: "home",
+        score: stats.score,
+        streak: stats.streak,
+        games_played: stats.games_played ?? 0,
+      },
+    )
       .then((data) => {
         if (alive) {
           setGreeting(data.reply);
+          if (data.session_id) {
+            onChatSessionChange(data.session_id);
+          }
         }
       })
       .catch(() => {

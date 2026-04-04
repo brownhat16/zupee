@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -7,31 +9,34 @@ router = APIRouter(prefix="/bluff", tags=["bluff"])
 
 
 class BluffStartRequest(BaseModel):
-    personality: str = "tricky"
+    personality: Literal["savage", "chill"] = "savage"
+    chat_session_id: str | None = None
 
 
 class BluffAskRequest(BaseModel):
     session_id: str
     question: str = Field(..., min_length=1)
-    personality: str = "tricky"
+    personality: Literal["savage", "chill"] = "savage"
+    chat_session_id: str | None = None
 
 
 class BluffGuessRequest(BaseModel):
     session_id: str
-    guess: int
-    personality: str = "tricky"
+    guess: int = Field(..., ge=1, le=50)
+    personality: Literal["savage", "chill"] = "savage"
+    chat_session_id: str | None = None
 
 
 @router.post("/start")
 def start(payload: BluffStartRequest) -> dict:
-    return start_bluff_game(payload.personality)
+    return start_bluff_game(payload.personality, payload.chat_session_id)
 
 
 @router.post("/ask")
 def ask(payload: BluffAskRequest) -> dict:
-    return ask_bluff_question(payload.session_id, payload.question, payload.personality)
+    return ask_bluff_question(payload.session_id, payload.question, payload.personality, payload.chat_session_id)
 
 
 @router.post("/guess")
 def guess(payload: BluffGuessRequest) -> dict:
-    return guess_bluff_answer(payload.session_id, payload.guess, payload.personality)
+    return guess_bluff_answer(payload.session_id, payload.guess, payload.personality, payload.chat_session_id)

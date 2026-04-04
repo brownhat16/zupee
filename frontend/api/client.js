@@ -43,37 +43,37 @@ export function getStats() {
   return request("/stats");
 }
 
-export function sendChat(message, personality) {
+export function sendChat(message, personality, sessionId = null, context = null) {
   return request("/chat", {
     method: "POST",
-    body: JSON.stringify({ message, personality }),
+    body: JSON.stringify({ message, personality, session_id: sessionId, context }),
   });
 }
 
-export function playCricket(choice, personality) {
+export function playCricket(choice, personality, chatSessionId = null) {
   return request("/cricket/predict", {
     method: "POST",
-    body: JSON.stringify({ choice, personality }),
+    body: JSON.stringify({ choice, personality, chat_session_id: chatSessionId }),
   });
 }
 
-export function startBluff(personality) {
+export function startBluff(personality, chatSessionId = null) {
   return request("/bluff/start", {
     method: "POST",
-    body: JSON.stringify({ personality }),
+    body: JSON.stringify({ personality, chat_session_id: chatSessionId }),
   });
 }
 
-export function askBluff(sessionId, question, personality) {
+export function askBluff(sessionId, question, personality, chatSessionId = null) {
   return request("/bluff/ask", {
     method: "POST",
-    body: JSON.stringify({ session_id: sessionId, question, personality }),
+    body: JSON.stringify({ session_id: sessionId, question, personality, chat_session_id: chatSessionId }),
   });
 }
 
-export function guessBluff(sessionId, guess, personality) {
+export function guessBluff(sessionId, guess, personality, chatSessionId = null) {
   return request("/bluff/guess", {
     method: "POST",
-    body: JSON.stringify({ session_id: sessionId, guess, personality }),
+    body: JSON.stringify({ session_id: sessionId, guess, personality, chat_session_id: chatSessionId }),
   });
 }

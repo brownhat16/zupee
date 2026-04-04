@@ -5,7 +5,7 @@ import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import PrimaryButton from "../components/PrimaryButton";
 
-export default function CricketGameScreen({ personality, onBack, onShowResult }) {
+export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
   const [messages, setMessages] = useState([
     { id: "intro", sender: "ai", text: "Next over runs? Dekhte hain tera cricket IQ kitna sharp hai." },
   ]);
@@ -17,7 +17,7 @@ export default function CricketGameScreen({ personality, onBack, onShowResult })
     setLoading(true);
     setMessages((current) => [...current, { id: `${Date.now()}-pick`, sender: "user", text: choice }]);
     try {
-      const result = await playCricket(choice, personality);
+      const result = await playCricket(choice, personality, chatSessionId);
       setScore(result.score);
       setPendingResult({
         title: "Cricket Battle",

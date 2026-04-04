@@ -5,7 +5,7 @@ import { askBluff, guessBluff, startBluff } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import PrimaryButton from "../components/PrimaryButton";
 
-export default function BluffMasterScreen({ personality, onBack, onShowResult }) {
+export default function BluffMasterScreen({ personality, chatSessionId, onBack, onShowResult }) {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [question, setQuestion] = useState("");
@@ -18,7 +18,7 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
   useEffect(() => {
     let alive = true;
     setIsStarting(true);
-    startBluff(personality)
+    startBluff(personality, chatSessionId)
       .then((data) => {
         if (!alive) {
           return;
@@ -69,7 +69,7 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
 
     try {
       setIsSubmitting(true);
-      const response = await askBluff(sessionId, nextQuestion, personality);
+      const response = await askBluff(sessionId, nextQuestion, personality, chatSessionId);
       setQuestionsLeft(response.questions_left);
       setMessages((current) => [...current, { id: `${Date.now()}-a`, sender: "ai", text: response.answer }]);
     } catch (error) {
@@ -100,7 +100,7 @@ export default function BluffMasterScreen({ personality, onBack, onShowResult })
     setMessages((current) => [...current, { id: `${Date.now()}-guess`, sender: "user", text: `My guess: ${numericGuess}` }]);
     try {
       setIsSubmitting(true);
-      const response = await guessBluff(sessionId, numericGuess, personality);
+      const response = await guessBluff(sessionId, numericGuess, personality, chatSessionId);
       onShowResult({
         title: "Bluff Master",
         message: response.message,

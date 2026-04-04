@@ -14,6 +14,7 @@ export default function App() {
   const [stats, setStats] = useState({ score: 0, streak: 0 });
   const [personality, setPersonality] = useState("savage");
   const [resultPayload, setResultPayload] = useState(null);
+  const [chatSessionId, setChatSessionId] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,6 +48,8 @@ export default function App() {
         <HomeScreen
           stats={stats}
           personality={personality}
+          chatSessionId={chatSessionId}
+          onChatSessionChange={setChatSessionId}
           onPersonalityChange={setPersonality}
           onPlayCricket={() => setScreen("cricket")}
           onPlayBluff={() => setScreen("bluff")}
@@ -55,6 +58,7 @@ export default function App() {
       {screen === "cricket" && (
         <CricketGameScreen
           personality={personality}
+          chatSessionId={chatSessionId}
           onBack={() => {
             refreshStats();
             setScreen("home");
@@ -65,6 +69,7 @@ export default function App() {
       {screen === "bluff" && (
         <BluffMasterScreen
           personality={personality}
+          chatSessionId={chatSessionId}
           onBack={() => {
             refreshStats();
             setScreen("home");

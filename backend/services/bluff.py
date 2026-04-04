@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import HTTPException
 
+from services.llm import generate_game_commentary
 from services.storage import update_state
 
 NUMBER_WORDS = {
@@ -142,7 +143,7 @@ def _get_session(state: dict, session_id: str) -> dict:
     return session
 
 
-def start_bluff_game(personality: str) -> dict:
+def start_bluff_game(personality: str, chat_session_id: str | None = None) -> dict:
     intro = (
         "Maine 1 se 50 ke beech ek number lock kiya hai. 5 sawaal poochh le, par yaad rakh main kabhi kabhi bluff bhi karta hoon."
     )
@@ -157,10 +158,29 @@ def start_bluff_game(personality: str) -> dict:
         }
         return {"session_id": session_id, "intro": intro, "questions_left": 5}
 
-    return update_state(mutate)
+    result = update_state(mutate)
+    result["intro"] = generate_game_commentary(
+        event_type="bluff_start",
+        personality=personality,
+        context={
+            "game": "bluff",
+            "stage": "start",
+            "questions_left": result["questions_left"],
+        },
+        fallback_reply=intro,
+        session_id=chat_session_id,
+        record_event="Bluff Master session started with 5 questions available.",
+        instruction="Generate a short Bluff Master intro for the player.",
+    )
+    return result
 
 
-def ask_bluff_question(session_id: str, question: str, personality: str) -> dict:
+def ask_bluff_question(
+    session_id: str,
+    question: str,
+    personality: str,
+    chat_session_id: str | None = None,
+) -> dict:
     def mutate(state: dict) -> dict:
         session = _get_session(state, session_id)
         if session["questions_left"] <= 0:
@@ -177,16 +197,51 @@ def ask_bluff_question(session_id: str, question: str, personality: str) -> dict
 
         session["questions_left"] -= 1
         state["bluff_sessions"][session_id] = session
+        base_answer = _style_reply(answer, should_lie, personality)
 
         return {
-            "answer": _style_reply(answer, should_lie, personality),
+            "answer": base_answer,
+            "base_answer": base_answer,
+            "lied": should_lie,
             "questions_left": session["questions_left"],
         }
 
-    return update_state(mutate)
+    result = update_state(mutate)
+    follow_up = generate_game_commentary(
+        event_type="bluff_question",
+        personality=personality,
+        context={
+            "game": "bluff",
+            "stage": "question",
+            "question": question,
+            "base_answer": result["base_answer"],
+            "lied": result["lied"],
+            "questions_left": result["questions_left"],
+        },
+        fallback_reply="",
+        session_id=chat_session_id,
+        record_event=(
+            f"Bluff question asked: {question}. Base answer given: {result['base_answer']}. "
+            f"Lied this turn: {result['lied']}. Questions left: {result['questions_left']}."
+        ),
+        instruction=(
+            "Generate one short follow-up taunt or hint after the base answer. "
+            "Do not repeat the base answer text and do not change its facts."
+        ),
+    ).strip()
+    if follow_up:
+        result["answer"] = f"{result['base_answer']} {follow_up}"
+    del result["base_answer"]
+    del result["lied"]
+    return result
 
 
-def guess_bluff_answer(session_id: str, guess: int, personality: str) -> dict:
+def guess_bluff_answer(
+    session_id: str,
+    guess: int,
+    personality: str,
+    chat_session_id: str | None = None,
+) -> dict:
     def mutate(state: dict) -> dict:
         session = _get_session(state, session_id)
         correct = guess == session["target"]
@@ -209,8 +264,36 @@ def guess_bluff_answer(session_id: str, guess: int, personality: str) -> dict:
         return {
             "correct": correct,
             "message": message,
+            "revealed_target": session["target"],
             "score": state["score"],
             "streak": state["streak"],
         }
 
-    return update_state(mutate)
+    result = update_state(mutate)
+    follow_up = generate_game_commentary(
+        event_type="bluff_guess",
+        personality=personality,
+        context={
+            "game": "bluff",
+            "stage": "guess",
+            "guess": guess,
+            "correct": result["correct"],
+            "revealed_target": result["revealed_target"],
+            "score": result["score"],
+            "streak": result["streak"],
+        },
+        fallback_reply="",
+        session_id=chat_session_id,
+        record_event=(
+            f"Bluff game resolved. Player guessed {guess}. "
+            f"Correct: {result['correct']}. Hidden number was {result['revealed_target']}."
+        ),
+        instruction=(
+            "Generate one short follow-up reaction after the base result message. "
+            "Do not repeat the same facts."
+        ),
+    ).strip()
+    if follow_up:
+        result["message"] = f"{result['message']} {follow_up}"
+    del result["revealed_target"]
+    return result

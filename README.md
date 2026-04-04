@@ -45,6 +45,12 @@ Optional generation controls:
 - `LLM_TEMPERATURE`
 - `LLM_TOP_P`
 - `LLM_MAX_TOKENS`
+- `LLM_TIMEOUT_SECONDS`
+- `LLM_MAX_RETRIES`
+- `CHAT_SESSION_MAX_MESSAGES`
+- `CHAT_SESSION_TTL_SECONDS`
+- `CHAT_SUMMARY_CHAR_LIMIT`
+- `GAMEBUDDY_STATE_FILE`
 
 4. Run the API:
 
@@ -170,6 +176,8 @@ npm run start
 ## Notes
 
 - The app works without external LLM access using built-in fallback responses.
-- Score and streak are stored in `backend/data/state.json`.
-- Personality modes included: `savage` and `chill`.
+- Score, streak, bluff sessions, and chat sessions are stored in `backend/data/state.json` by default.
+- `POST /chat` now supports `session_id` and returns `session_id` with the reply so the app can keep server-side memory.
+- Gameplay routes accept optional `chat_session_id` so cricket and bluff commentary can reuse the same agent session.
+- Personality modes are validated as `savage` and `chill`.
 - If you see `Cannot connect to Metro`, start Expo again with `cd frontend && npm run start`, then reopen the app on the same network/device.

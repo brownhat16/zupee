@@ -1,3 +1,6 @@
+from typing import Any
+from typing import Literal
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -8,10 +11,16 @@ router = APIRouter(tags=["chat"])
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
-    personality: str = Field(default="savage")
+    personality: Literal["savage", "chill"] = "savage"
+    session_id: str | None = None
+    context: dict[str, Any] | None = None
 
 
 @router.post("/chat")
 def chat(payload: ChatRequest) -> dict:
-    response = generate_chat_reply(payload.message, payload.personality)
-    return {"reply": response}
+    return generate_chat_reply(
+        payload.message,
+        payload.personality,
+        session_id=payload.session_id,
+        context=payload.context,
+    )

@@ -1,5 +1,6 @@
 import secrets
 
+from services.llm import generate_game_commentary
 from services.storage import update_state
 
 CRICKET_BUCKETS = [
@@ -36,7 +37,7 @@ def _pick_outcome() -> tuple[str, int]:
     return fallback_bucket["label"], secrets.choice(fallback_bucket["runs"])
 
 
-def play_cricket_round(choice: str, personality: str) -> dict:
+def play_cricket_round(choice: str, personality: str, chat_session_id: str | None = None) -> dict:
     actual_bucket, runs = _pick_outcome()
     win = choice == actual_bucket
 
@@ -64,4 +65,25 @@ def play_cricket_round(choice: str, personality: str) -> dict:
             "streak": state["streak"],
         }
 
-    return update_state(mutate)
+    result = update_state(mutate)
+    result["reaction"] = generate_game_commentary(
+        event_type="cricket_round",
+        personality=personality,
+        context={
+            "game": "cricket",
+            "choice": choice,
+            "actual_bucket": actual_bucket,
+            "actual_runs": runs,
+            "win": win,
+            "score": result["score"],
+            "streak": result["streak"],
+        },
+        fallback_reply=reaction,
+        session_id=chat_session_id,
+        record_event=(
+            f"Cricket round ended. Player chose {choice}. "
+            f"Actual result was {runs} runs in bucket {actual_bucket}. Win: {win}."
+        ),
+        instruction="Generate a short in-app reaction to this finished cricket round.",
+    )
+    return result
