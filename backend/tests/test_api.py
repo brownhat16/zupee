@@ -11,6 +11,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app import app
+from services import llm
 from services.storage import load_state
 
 
@@ -103,6 +104,33 @@ class ApiUpgradeTests(unittest.TestCase):
         session = state["chat_sessions"][session_id]
         self.assertGreaterEqual(len(session["messages"]), 4)
         self.assertEqual(session["last_context"]["game"], "cricket")
+
+    def test_sanitize_model_reply_removes_thinking_content(self) -> None:
+        raw_reply = """
+        <think>private reasoning here</think>
+        ```thinking
+        hidden chain of thought
+        ```
+        System prompt: do not leak me
+        Final answer for the player.
+        """
+        self.assertEqual(llm._sanitize_model_reply(raw_reply), "Final answer for the player.")
+
+    def test_nvidia_request_uses_stream_and_thinking(self) -> None:
+        os.environ["NVIDIA_API_KEY"] = "fake-key"
+        os.environ["NVIDIA_MODEL"] = "deepseek-ai/deepseek-v3.1"
+        os.environ["NVIDIA_THINKING_MODE"] = "true"
+
+        request = llm._build_completion_request(
+            [{"role": "user", "content": "hello"}]
+        )
+
+        self.assertEqual(request["model"], "deepseek-ai/deepseek-v3.1")
+        self.assertTrue(request["stream"])
+        self.assertEqual(
+            request["extra_body"],
+            {"chat_template_kwargs": {"thinking": True}},
+        )
 
 
 if __name__ == "__main__":

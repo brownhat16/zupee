@@ -37,7 +37,7 @@ cp .env.example .env
 Set either:
 
 - `OPENAI_API_KEY` and optionally `OPENAI_MODEL`
-- or `NVIDIA_API_KEY`, `NVIDIA_MODEL=google/gemma-2-27b-it`, and `OPENAI_BASE_URL=https://integrate.api.nvidia.com/v1`
+- or `NVIDIA_API_KEY`, `NVIDIA_MODEL=deepseek-ai/deepseek-v3.1`, and `OPENAI_BASE_URL=https://integrate.api.nvidia.com/v1`
 - or `TOGETHER_API_KEY`, `TOGETHER_MODEL`, and `OPENAI_BASE_URL=https://api.together.xyz/v1`
 
 Optional generation controls:
@@ -47,6 +47,7 @@ Optional generation controls:
 - `LLM_MAX_TOKENS`
 - `LLM_TIMEOUT_SECONDS`
 - `LLM_MAX_RETRIES`
+- `NVIDIA_THINKING_MODE`
 - `CHAT_SESSION_MAX_MESSAGES`
 - `CHAT_SESSION_TTL_SECONDS`
 - `CHAT_SUMMARY_CHAR_LIMIT`
