@@ -25,7 +25,11 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         }
         setSessionId(data.session_id);
         setQuestionsLeft(data.questions_left);
-        setMessages([{ id: "intro", sender: "ai", text: data.intro }]);
+        const nextMessages = [{ id: "intro", sender: "ai", text: data.intro }];
+        if (data.starter_question) {
+          nextMessages.push({ id: "starter-question", sender: "ai", text: data.starter_question });
+        }
+        setMessages(nextMessages);
       })
       .catch(() => {
         if (alive) {
@@ -125,6 +129,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
     >
       <Text style={styles.header}>Bluff Master AI</Text>
       <Text style={styles.meta}>Questions left: {questionsLeft}</Text>
+      <Text style={styles.helper}>Try yes/no questions: even? greater than 25? divisible by 3?</Text>
       <ScrollView
         ref={scrollViewRef}
         style={styles.chatArea}
@@ -176,7 +181,12 @@ const styles = StyleSheet.create({
   meta: {
     color: "#96a0bd",
     marginTop: 8,
+    marginBottom: 6,
+  },
+  helper: {
+    color: "#7f89a8",
     marginBottom: 12,
+    lineHeight: 20,
   },
   chatArea: {
     flex: 1,

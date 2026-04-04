@@ -38,6 +38,26 @@ COMPARISON_PATTERNS = {
     "greater": ["greater than", "bigger than", "more than", "above", "over"],
     "less": ["less than", "smaller than", "lower than", "below", "under"],
 }
+QUESTION_SUGGESTION_PATTERNS = [
+    "give me a question",
+    "suggest a question",
+    "what should i ask",
+    "what can i ask",
+    "help me ask",
+    "question idea",
+    "kya puchu",
+    "konsa question",
+]
+BLUFF_CLARIFICATION_PATTERNS = [
+    "but you",
+    "you gave clue",
+    "contradict",
+    "confus",
+    "are you lying",
+    "are you bluffing",
+    "were you lying",
+    "jhooth",
+]
 
 
 def _normalize_text(text: str) -> str:
@@ -129,10 +149,43 @@ def _truthful_reply(target: int, question: str) -> str:
     return f"Clue time: ye number {lower_bound} aur {upper_bound} ke beech chill kar raha hai."
 
 
+def _build_meta_reply(question: str, questions_left: int, personality: str) -> str | None:
+    normalized_question = _normalize_text(question)
+
+    if any(pattern in normalized_question for pattern in QUESTION_SUGGESTION_PATTERNS):
+        if personality == "chill":
+            return (
+                "Try tight yes/no questions like 'is it even?', 'is it greater than 25?', "
+                "ya 'is it divisible by 3?'. Ye help free hai, question count same rahega."
+            )
+        return (
+            "Smart move: yes/no wali narrow questions pucho like 'is it even?', "
+            "'is it greater than 25?' ya 'is it divisible by 3?'. "
+            f"Ye help free hai, abhi bhi {questions_left} questions bache hain."
+        )
+
+    if any(pattern in normalized_question for pattern in BLUFF_CLARIFICATION_PATTERNS):
+        if personality == "chill":
+            return (
+                "Bluff Master mein kuch clues misleading ho sakte hain, isliye ek hint ko cross-check karo. "
+                "Example: 'less than 26?' ke baad 'greater than 15?' ya 'is it even?' pucho. "
+                "Ye clarification free hai."
+            )
+        return (
+            "Yahi toh bluff hai. Har clue ko final truth mat maan, usko cross-check karo. "
+            "Example: 'less than 26?' ke baad 'greater than 15?' ya 'is it even?' pucho. "
+            "Ye clarification free hai."
+        )
+
+    return None
+
+
 def _style_reply(answer: str, lied: bool, personality: str) -> str:
-    prefix = "Bluff alert: " if lied else "Seedha clue: "
+    prefix = "Seedha clue: "
     if personality == "chill":
-        prefix = "Soft clue: " if not lied else "Thoda sa confusion: "
+        prefix = "Soft clue: "
+    if lied and personality != "chill":
+        prefix = "Clue drop: "
     return prefix + answer
 
 
@@ -143,10 +196,17 @@ def _get_session(state: dict, session_id: str) -> dict:
     return session
 
 
+def _starter_question_text(personality: str) -> str:
+    if personality == "chill":
+        return "Start with this: 'is it even?' Ye free starter tip hai."
+    return "Starter move: 'is it even?' se shuru kar. Clean info milega."
+
+
 def start_bluff_game(personality: str, chat_session_id: str | None = None) -> dict:
     intro = (
         "Maine 1 se 50 ke beech ek number lock kiya hai. 5 sawaal poochh le, par yaad rakh main kabhi kabhi bluff bhi karta hoon."
     )
+    starter_question = _starter_question_text(personality)
 
     def mutate(state: dict) -> dict:
         session_id = str(uuid.uuid4())
@@ -156,7 +216,12 @@ def start_bluff_game(personality: str, chat_session_id: str | None = None) -> di
             "lies_used": 0,
             "personality": personality,
         }
-        return {"session_id": session_id, "intro": intro, "questions_left": 5}
+        return {
+            "session_id": session_id,
+            "intro": intro,
+            "starter_question": starter_question,
+            "questions_left": 5,
+        }
 
     result = update_state(mutate)
     result["intro"] = generate_game_commentary(
@@ -165,12 +230,13 @@ def start_bluff_game(personality: str, chat_session_id: str | None = None) -> di
         context={
             "game": "bluff",
             "stage": "start",
+            "starter_question": starter_question,
             "questions_left": result["questions_left"],
         },
         fallback_reply=intro,
         session_id=chat_session_id,
         record_event="Bluff Master session started with 5 questions available.",
-        instruction="Generate a short Bluff Master intro for the player.",
+        instruction="Generate a short Bluff Master intro for the player without repeating the starter question.",
     )
     return result
 
@@ -186,54 +252,34 @@ def ask_bluff_question(
         if session["questions_left"] <= 0:
             raise HTTPException(status_code=400, detail="No questions left. Make a guess.")
 
+        meta_reply = _build_meta_reply(question, session["questions_left"], personality)
+        if meta_reply:
+            return {
+                "answer": meta_reply,
+                "questions_left": session["questions_left"],
+                "question_consumed": False,
+            }
+
         truthful_answer = _truthful_reply(session["target"], question)
-        should_lie = secrets.randbelow(100) < 35
+        can_lie = truthful_answer in {"Haan", "Nahi"}
+        should_lie = can_lie and secrets.randbelow(100) < 35
         answer = truthful_answer
 
         if should_lie:
             yes_no_map = {"Haan": "Nahi", "Nahi": "Haan"}
-            answer = yes_no_map.get(truthful_answer, "Main itna seedha clue kyun doon?")
+            answer = yes_no_map[truthful_answer]
             session["lies_used"] += 1
 
         session["questions_left"] -= 1
         state["bluff_sessions"][session_id] = session
-        base_answer = _style_reply(answer, should_lie, personality)
 
         return {
-            "answer": base_answer,
-            "base_answer": base_answer,
-            "lied": should_lie,
+            "answer": _style_reply(answer, should_lie, personality),
             "questions_left": session["questions_left"],
+            "question_consumed": True,
         }
 
-    result = update_state(mutate)
-    follow_up = generate_game_commentary(
-        event_type="bluff_question",
-        personality=personality,
-        context={
-            "game": "bluff",
-            "stage": "question",
-            "question": question,
-            "base_answer": result["base_answer"],
-            "lied": result["lied"],
-            "questions_left": result["questions_left"],
-        },
-        fallback_reply="",
-        session_id=chat_session_id,
-        record_event=(
-            f"Bluff question asked: {question}. Base answer given: {result['base_answer']}. "
-            f"Lied this turn: {result['lied']}. Questions left: {result['questions_left']}."
-        ),
-        instruction=(
-            "Generate one short follow-up taunt or hint after the base answer. "
-            "Do not repeat the base answer text and do not change its facts."
-        ),
-    ).strip()
-    if follow_up:
-        result["answer"] = f"{result['base_answer']} {follow_up}"
-    del result["base_answer"]
-    del result["lied"]
-    return result
+    return update_state(mutate)
 
 
 def guess_bluff_answer(

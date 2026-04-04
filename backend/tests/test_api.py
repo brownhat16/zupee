@@ -11,6 +11,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app import app
+from services import bluff
 from services import llm
 from services.storage import load_state
 
@@ -131,6 +132,45 @@ class ApiUpgradeTests(unittest.TestCase):
             request["extra_body"],
             {"chat_template_kwargs": {"thinking": True}},
         )
+
+    def test_bluff_help_question_does_not_consume_turn(self) -> None:
+        start_response = self.client.post(
+            "/bluff/start",
+            json={"personality": "chill"},
+        )
+        session_id = start_response.json()["session_id"]
+
+        help_response = self.client.post(
+            "/bluff/ask",
+            json={
+                "session_id": session_id,
+                "question": "give me a question",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(help_response.status_code, 200)
+        payload = help_response.json()
+        self.assertEqual(payload["questions_left"], 5)
+        self.assertIn("free", payload["answer"].lower())
+
+    def test_bluff_start_includes_starter_question(self) -> None:
+        response = self.client.post(
+            "/bluff/start",
+            json={"personality": "savage"},
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("starter_question", payload)
+        self.assertIn("is it even", payload["starter_question"].lower())
+
+    def test_bluff_clarification_reply_is_free(self) -> None:
+        reply = bluff._build_meta_reply("but you gave clue it is less than 26", 2, "savage")
+        self.assertIsNotNone(reply)
+        self.assertIn("cross-check", reply.lower())
+
+    def test_bluff_style_does_not_reveal_lie_state(self) -> None:
+        self.assertEqual(bluff._style_reply("Haan", True, "savage"), "Clue drop: Haan")
+        self.assertEqual(bluff._style_reply("Nahi", False, "chill"), "Soft clue: Nahi")
 
 
 if __name__ == "__main__":
