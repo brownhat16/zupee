@@ -644,7 +644,7 @@ def generate_chat_reply(
         message,
         normalized_personality,
         session,
-        context or (session.get("last_context") if session else None),
+        context,
     )
 
     prompt_messages = _build_prompt_messages(

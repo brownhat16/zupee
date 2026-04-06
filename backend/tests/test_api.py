@@ -247,6 +247,29 @@ class ApiUpgradeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("scoreboard", response.json()["reply"].lower())
 
+    def test_home_context_does_not_override_later_chat_intents(self) -> None:
+        first = self.client.post(
+            "/chat",
+            json={
+                "message": "Give me a short welcome line for the home screen.",
+                "personality": "chill",
+                "context": {"screen": "home", "score": 0, "streak": 0},
+            },
+        ).json()
+
+        second = self.client.post(
+            "/chat",
+            json={
+                "message": "What nickname did I tell you a moment ago?",
+                "personality": "chill",
+                "session_id": first["session_id"],
+            },
+        )
+
+        self.assertEqual(second.status_code, 200)
+        self.assertNotIn("ready ho", second.json()["reply"].lower())
+        self.assertIn("nickname", second.json()["reply"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()
