@@ -8,6 +8,7 @@ import BluffMasterScreen from "./screens/BluffMasterScreen";
 import ResultScreen from "./screens/ResultScreen";
 import SplashScreen from "./screens/SplashScreen";
 import { getStats } from "./api/client";
+import { theme } from "./theme";
 
 export default function App() {
   const [screen, setScreen] = useState("splash");
@@ -93,6 +94,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#07070c",
+    backgroundColor: theme.colors.background,
   },
 });
