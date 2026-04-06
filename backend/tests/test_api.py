@@ -62,6 +62,14 @@ class ApiUpgradeTests(unittest.TestCase):
         self.assertEqual(session["personality"], "savage")
         self.assertEqual(len(session["messages"]), 4)
 
+    def test_root_loads_human_facing_home_screen(self) -> None:
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
+        self.assertIn("Choose a game", response.text)
+        self.assertIn("Cricket Prediction", response.text)
+        self.assertIn("Bluff Master", response.text)
+
     def test_invalid_cricket_choice_is_rejected(self) -> None:
         response = self.client.post(
             "/cricket/predict",
@@ -183,6 +191,31 @@ class ApiUpgradeTests(unittest.TestCase):
         payload = response.json()
         self.assertIn("starter_question", payload)
         self.assertIn("is it even", payload["starter_question"].lower())
+        self.assertIn("may be true or false", payload["intro"].lower())
+
+    def test_bluff_duplicate_question_returns_cached_result(self) -> None:
+        start = self.client.post("/bluff/start", json={"personality": "chill"}).json()
+        session_id = start["session_id"]
+
+        first = self.client.post(
+            "/bluff/ask",
+            json={
+                "session_id": session_id,
+                "question": "is it even?",
+                "personality": "chill",
+            },
+        )
+        second = self.client.post(
+            "/bluff/ask",
+            json={
+                "session_id": session_id,
+                "question": "is it even?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json(), second.json())
 
     def test_bluff_clarification_reply_is_free(self) -> None:
         reply = bluff._build_meta_reply("but you gave clue it is less than 26", 2, "savage")
@@ -203,6 +236,21 @@ class ApiUpgradeTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("support", response.json()["reply"].lower())
+
+    def test_chat_game_catalog_mentions_only_live_games(self) -> None:
+        response = self.client.post(
+            "/chat",
+            json={
+                "message": "Hi, what games can I play here?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        reply = response.json()["reply"].lower()
+        self.assertIn("cricket", reply)
+        self.assertIn("bluff", reply)
+        self.assertNotIn("puzzle", reply)
+        self.assertNotIn("arcade", reply)
 
     def test_chat_hidden_prompt_request_is_blocked_cleanly(self) -> None:
         response = self.client.post(
@@ -245,7 +293,10 @@ class ApiUpgradeTests(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("scoreboard", response.json()["reply"].lower())
+        reply = response.json()["reply"].lower()
+        self.assertIn("choose a game", reply)
+        self.assertIn("cricket", reply)
+        self.assertIn("bluff", reply)
 
     def test_home_context_does_not_override_later_chat_intents(self) -> None:
         first = self.client.post(
@@ -269,6 +320,27 @@ class ApiUpgradeTests(unittest.TestCase):
         self.assertEqual(second.status_code, 200)
         self.assertNotIn("ready ho", second.json()["reply"].lower())
         self.assertIn("nickname", second.json()["reply"].lower())
+
+    def test_invalid_bluff_session_maps_to_product_copy(self) -> None:
+        response = self.client.post(
+            "/bluff/ask",
+            json={
+                "session_id": "missing",
+                "question": "is it even?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 404)
+        payload = response.json()
+        self.assertEqual(payload["error_code"], "bluff_session_expired")
+        self.assertIn("start a new round", payload["detail"].lower())
+
+    def test_stats_are_labeled_with_scope(self) -> None:
+        response = self.client.get("/stats")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["scope"], "shared_service_instance")
+        self.assertIn("shared", payload["scope_description"].lower())
 
 
 if __name__ == "__main__":

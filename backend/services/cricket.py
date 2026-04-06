@@ -51,9 +51,11 @@ def play_cricket_round(choice: str, personality: str, chat_session_id: str | Non
         if win:
             state["score"] += 10
             state["streak"] += 1
+            score_delta = 10
         else:
             state["score"] = max(0, state["score"] - 3)
             state["streak"] = 0
+            score_delta = -3
 
         return {
             "choice": choice,
@@ -63,6 +65,8 @@ def play_cricket_round(choice: str, personality: str, chat_session_id: str | Non
             "reaction": reaction,
             "score": state["score"],
             "streak": state["streak"],
+            "score_delta": score_delta,
+            "score_reason": "Correct bucket prediction" if win else "Incorrect bucket prediction",
         }
 
     result = update_state(mutate)

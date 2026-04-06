@@ -202,9 +202,13 @@ def _starter_question_text(personality: str) -> str:
     return "Starter move: 'is it even?' se shuru kar. Clean info milega."
 
 
+def _question_key(question: str) -> str:
+    return _normalize_text(question)
+
+
 def start_bluff_game(personality: str, chat_session_id: str | None = None) -> dict:
     intro = (
-        "Maine 1 se 50 ke beech ek number lock kiya hai. 5 sawaal poochh le, par yaad rakh main kabhi kabhi bluff bhi karta hoon."
+        "Maine 1 se 50 ke beech ek number lock kiya hai. Paanch yes/no sawaal poochh sakte ho, aur mere clues may be true or false."
     )
     starter_question = _starter_question_text(personality)
 
@@ -215,6 +219,8 @@ def start_bluff_game(personality: str, chat_session_id: str | None = None) -> di
             "questions_left": 5,
             "lies_used": 0,
             "personality": personality,
+            "question_history": [],
+            "last_ask": None,
         }
         return {
             "session_id": session_id,
@@ -252,6 +258,13 @@ def ask_bluff_question(
         if session["questions_left"] <= 0:
             raise HTTPException(status_code=400, detail="No questions left. Make a guess.")
 
+        normalized_question = _question_key(question)
+        last_ask = session.get("last_ask")
+        if last_ask and last_ask.get("question_key") == normalized_question:
+            cached_response = last_ask.get("response")
+            if cached_response:
+                return cached_response
+
         meta_reply = _build_meta_reply(question, session["questions_left"], personality)
         if meta_reply:
             return {
@@ -271,13 +284,23 @@ def ask_bluff_question(
             session["lies_used"] += 1
 
         session["questions_left"] -= 1
+        session.setdefault("question_history", []).append(
+            {
+                "question": question,
+                "truthful_answer": truthful_answer,
+                "presented_answer": answer,
+                "lied": should_lie,
+            }
+        )
         state["bluff_sessions"][session_id] = session
 
-        return {
+        response = {
             "answer": _style_reply(answer, should_lie, personality),
             "questions_left": session["questions_left"],
             "question_consumed": True,
         }
+        session["last_ask"] = {"question_key": normalized_question, "response": response}
+        return response
 
     return update_state(mutate)
 
@@ -291,19 +314,28 @@ def guess_bluff_answer(
     def mutate(state: dict) -> dict:
         session = _get_session(state, session_id)
         correct = guess == session["target"]
+        questions_asked = len(session.get("question_history", []))
+        lies_used = session.get("lies_used", 0)
 
         state["games_played"] += 1
         if correct:
             state["score"] += 20
             state["streak"] += 1
+            score_delta = 20
             message = "Sheeesh, tune bluff tod diya. Respect."
         else:
             state["score"] = max(0, state["score"] - 5)
             state["streak"] = 0
+            score_delta = -5
             message = f"Wrong guess. Number {session['target']} tha. Mind games mein aur grind kar."
 
         if personality == "chill" and not correct:
             message = f"Close try. Hidden number {session['target']} tha. Next round better hoga."
+
+        explanation = (
+            f"Round recap: {questions_asked} question aaye aur {lies_used} clues misleading the, "
+            "isliye pattern mixed lag sakta tha."
+        )
 
         del state["bluff_sessions"][session_id]
 
@@ -313,6 +345,10 @@ def guess_bluff_answer(
             "revealed_target": session["target"],
             "score": state["score"],
             "streak": state["streak"],
+            "score_delta": score_delta,
+            "round_explanation": explanation,
+            "lies_used": lies_used,
+            "questions_asked": questions_asked,
         }
 
     result = update_state(mutate)
@@ -327,6 +363,8 @@ def guess_bluff_answer(
             "revealed_target": result["revealed_target"],
             "score": result["score"],
             "streak": result["streak"],
+            "lies_used": result["lies_used"],
+            "questions_asked": result["questions_asked"],
         },
         fallback_reply="",
         session_id=chat_session_id,
@@ -341,5 +379,8 @@ def guess_bluff_answer(
     ).strip()
     if follow_up:
         result["message"] = f"{result['message']} {follow_up}"
+    result["message"] = f"{result['message']} {result['round_explanation']}"
     del result["revealed_target"]
+    del result["lies_used"]
+    del result["questions_asked"]
     return result
