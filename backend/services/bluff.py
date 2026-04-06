@@ -332,10 +332,16 @@ def guess_bluff_answer(
         if personality == "chill" and not correct:
             message = f"Close try. Hidden number {session['target']} tha. Next round better hoga."
 
-        explanation = (
-            f"Round recap: {questions_asked} question aaye aur {lies_used} clues misleading the, "
-            "isliye pattern mixed lag sakta tha."
-        )
+        if lies_used:
+            explanation = (
+                f"Round recap: {questions_asked} question aaye aur {lies_used} clues misleading the, "
+                "isliye hints ko cross-check karna padta."
+            )
+        else:
+            explanation = (
+                f"Round recap: {questions_asked} question aaye aur koi misleading clue nahi tha, "
+                "isliye answer sequence seedha tha."
+            )
 
         del state["bluff_sessions"][session_id]
 
@@ -352,33 +358,29 @@ def guess_bluff_answer(
         }
 
     result = update_state(mutate)
-    follow_up = generate_game_commentary(
-        event_type="bluff_guess",
-        personality=personality,
-        context={
-            "game": "bluff",
-            "stage": "guess",
-            "guess": guess,
-            "correct": result["correct"],
-            "revealed_target": result["revealed_target"],
-            "score": result["score"],
-            "streak": result["streak"],
-            "lies_used": result["lies_used"],
-            "questions_asked": result["questions_asked"],
-        },
-        fallback_reply="",
-        session_id=chat_session_id,
-        record_event=(
-            f"Bluff game resolved. Player guessed {guess}. "
-            f"Correct: {result['correct']}. Hidden number was {result['revealed_target']}."
-        ),
-        instruction=(
-            "Generate one short follow-up reaction after the base result message. "
-            "Do not repeat the same facts."
-        ),
-    ).strip()
-    if follow_up:
-        result["message"] = f"{result['message']} {follow_up}"
+    if chat_session_id:
+        generate_game_commentary(
+            event_type="bluff_guess",
+            personality=personality,
+            context={
+                "game": "bluff",
+                "stage": "guess",
+                "guess": guess,
+                "correct": result["correct"],
+                "revealed_target": result["revealed_target"],
+                "score": result["score"],
+                "streak": result["streak"],
+                "lies_used": result["lies_used"],
+                "questions_asked": result["questions_asked"],
+            },
+            fallback_reply="",
+            session_id=chat_session_id,
+            record_event=(
+                f"Bluff game resolved. Player guessed {guess}. "
+                f"Correct: {result['correct']}. Hidden number was {result['revealed_target']}."
+            ),
+            instruction="Record this resolved bluff round in the session history.",
+        )
     result["message"] = f"{result['message']} {result['round_explanation']}"
     del result["revealed_target"]
     del result["lies_used"]

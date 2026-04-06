@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -42,6 +43,53 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse
         }
 
     return JSONResponse(status_code=exc.status_code, content=payload)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    path = request.url.path
+    errors = exc.errors()
+
+    if path == "/cricket/predict":
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Pick one valid cricket bucket: <6, 6-10, or 10+.",
+                "error_code": "invalid_cricket_choice",
+                "recovery_action": "Choose a run bucket",
+            },
+        )
+
+    if path == "/bluff/guess":
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Enter a bluff guess between 1 and 50.",
+                "error_code": "invalid_bluff_guess",
+                "recovery_action": "Enter a number from 1 to 50",
+            },
+        )
+
+    if path == "/bluff/ask":
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Ask one short question to continue the bluff round.",
+                "error_code": "invalid_bluff_question",
+                "recovery_action": "Ask a yes/no question",
+            },
+        )
+
+    first_error = errors[0] if errors else {}
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "That input did not match the expected format.",
+            "error_code": "validation_error",
+            "recovery_action": "Check the request and try again",
+            "field": first_error.get("loc", [])[-1] if first_error.get("loc") else None,
+        },
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

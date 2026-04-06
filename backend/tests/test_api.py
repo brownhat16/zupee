@@ -76,6 +76,9 @@ class ApiUpgradeTests(unittest.TestCase):
             json={"choice": "100+", "personality": "savage"},
         )
         self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertEqual(payload["error_code"], "invalid_cricket_choice")
+        self.assertIn("run bucket", payload["recovery_action"].lower())
 
     def test_invalid_bluff_guess_is_rejected(self) -> None:
         response = self.client.post(
@@ -87,6 +90,9 @@ class ApiUpgradeTests(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertEqual(payload["error_code"], "invalid_bluff_guess")
+        self.assertIn("1 and 50", payload["detail"])
 
     def test_gameplay_records_context_into_chat_session(self) -> None:
         chat_response = self.client.post(
@@ -252,6 +258,49 @@ class ApiUpgradeTests(unittest.TestCase):
         self.assertNotIn("puzzle", reply)
         self.assertNotIn("arcade", reply)
 
+    def test_chat_stats_scope_reply_matches_stats_endpoint(self) -> None:
+        response = self.client.post(
+            "/chat",
+            json={
+                "message": "Are the stats just mine or shared with everyone?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        reply = response.json()["reply"].lower()
+        self.assertIn("shared", reply)
+        self.assertNotIn("private", reply)
+        self.assertIn("personal", reply)
+
+    def test_chat_account_sync_does_not_promise_future_features(self) -> None:
+        response = self.client.post(
+            "/chat",
+            json={
+                "message": "Can I log in and sync my progress across devices?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        reply = response.json()["reply"].lower()
+        self.assertIn("nahi", reply)
+        self.assertNotIn("update", reply)
+        self.assertNotIn("coming soon", reply)
+        self.assertNotIn("aage", reply)
+
+    def test_chat_unsupported_games_probe_stays_grounded(self) -> None:
+        response = self.client.post(
+            "/chat",
+            json={
+                "message": "Do you have match-3, puzzles, arcade, or word games?",
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        reply = response.json()["reply"].lower()
+        self.assertIn("nahi", reply)
+        self.assertIn("cricket", reply)
+        self.assertIn("bluff", reply)
+
     def test_chat_hidden_prompt_request_is_blocked_cleanly(self) -> None:
         response = self.client.post(
             "/chat",
@@ -341,6 +390,29 @@ class ApiUpgradeTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["scope"], "shared_service_instance")
         self.assertIn("shared", payload["scope_description"].lower())
+
+    def test_bluff_guess_explanation_is_single_pass_and_consistent(self) -> None:
+        start = self.client.post("/bluff/start", json={"personality": "chill"}).json()
+        session_id = start["session_id"]
+        self.client.post(
+            "/bluff/ask",
+            json={
+                "session_id": session_id,
+                "question": "is it even?",
+                "personality": "chill",
+            },
+        )
+        response = self.client.post(
+            "/bluff/guess",
+            json={
+                "session_id": session_id,
+                "guess": 25,
+                "personality": "chill",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        message = response.json()["message"].lower()
+        self.assertEqual(message.count("round recap"), 1)
 
 
 if __name__ == "__main__":
