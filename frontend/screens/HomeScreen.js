@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
+import MotionFade from "../components/MotionFade";
 import StatsCard from "../components/StatsCard";
 import { sendChat } from "../api/client";
 import { theme } from "../theme";
@@ -58,98 +59,112 @@ export default function HomeScreen({
     <View style={styles.screen}>
       <ScreenBackdrop />
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <Text style={styles.kicker}>LIVE PRODUCT</Text>
-          <Text style={styles.title}>Choose your next quick-hit game.</Text>
-          <View style={styles.greetingCard}>
-            {isGreetingLoading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={theme.colors.teal} />
-                <Text style={styles.loadingText}>Setting the tone for this session...</Text>
-              </View>
-            ) : (
-              <Text style={styles.greeting}>{greeting}</Text>
-            )}
+        <MotionFade delay={40} offset={20}>
+          <View style={styles.heroCard}>
+            <Text style={styles.kicker}>LIVE PRODUCT</Text>
+            <Text style={styles.title}>Choose your next quick-hit game.</Text>
+            <View style={styles.greetingCard}>
+              {isGreetingLoading ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator color={theme.colors.teal} />
+                  <Text style={styles.loadingText}>Setting the tone for this session...</Text>
+                </View>
+              ) : (
+                <Text style={styles.greeting}>{greeting}</Text>
+              )}
+            </View>
+            <Text style={styles.subcopy}>
+              Two live modes, one shared scoreboard, and fast rounds that make sense on mobile.
+            </Text>
           </View>
-          <Text style={styles.subcopy}>
-            Two live modes, one shared scoreboard, and fast rounds that make sense on mobile.
-          </Text>
-        </View>
+        </MotionFade>
 
-        <StatsCard
-          score={stats.score}
-          streak={stats.streak}
-          gamesPlayed={stats.games_played ?? 0}
-        />
-
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Pick the AI tone</Text>
-          <Text style={styles.panelBody}>Choose whether the assistant sounds sharper or calmer across the whole session.</Text>
-          <View style={styles.toggleRow}>
-            <PrimaryButton
-              label="Savage"
-              note="Sharper copy and higher heat"
-              onPress={() => onPersonalityChange("savage")}
-              variant={personality === "savage" ? "solid" : "ghost"}
-            />
-            <PrimaryButton
-              label="Chill"
-              note="Cleaner guidance and softer tone"
-              onPress={() => onPersonalityChange("chill")}
-              variant={personality === "chill" ? "solid" : "ghost"}
-            />
-          </View>
-        </View>
-
-        <View style={styles.catalogHeader}>
-          <Text style={styles.sectionTitle}>Playable right now</Text>
-          <Text style={styles.sectionBody}>Pick a game in one tap. Each card tells you exactly what kind of round you’re getting.</Text>
-        </View>
-
-        <View style={[styles.gameCard, styles.cricketCard]}>
-          <Text style={styles.gameEyebrow}>Fast Read</Text>
-          <Text style={styles.gameTitle}>Cricket Prediction</Text>
-          <Text style={styles.gameBody}>
-            Predict which run bucket lands next. Shortest path to a result, strongest fit when you want a quick win-or-miss moment.
-          </Text>
-          <View style={styles.tagRow}>
-            <Text style={styles.tag}>10-point upside</Text>
-            <Text style={styles.tag}>Instant reveal</Text>
-          </View>
-          <PrimaryButton
-            label="Start Cricket Prediction"
-            note="Pick <6, 6-10, or 10+"
-            onPress={onPlayCricket}
+        <MotionFade delay={90} offset={20}>
+          <StatsCard
+            score={stats.score}
+            streak={stats.streak}
+            gamesPlayed={stats.games_played ?? 0}
           />
-        </View>
+        </MotionFade>
 
-        <View style={[styles.gameCard, styles.bluffCard]}>
-          <Text style={styles.gameEyebrow}>Mind Game</Text>
-          <Text style={styles.gameTitle}>Bluff Master</Text>
-          <Text style={styles.gameBody}>
-            Ask up to five yes/no questions and then guess the hidden number. The rule is explicit: clues may mislead you.
-          </Text>
-          <View style={styles.ruleCard}>
-            <Text style={styles.ruleLabel}>Rule</Text>
-            <Text style={styles.ruleText}>The AI’s clues may be true or false, so cross-check before you commit.</Text>
+        <MotionFade delay={140} offset={20}>
+          <View style={styles.panel}>
+            <Text style={styles.panelTitle}>Pick the AI tone</Text>
+            <Text style={styles.panelBody}>Choose whether the assistant sounds sharper or calmer across the whole session.</Text>
+            <View style={styles.toggleRow}>
+              <PrimaryButton
+                label="Savage"
+                note="Sharper copy and higher heat"
+                onPress={() => onPersonalityChange("savage")}
+                variant={personality === "savage" ? "solid" : "ghost"}
+              />
+              <PrimaryButton
+                label="Chill"
+                note="Cleaner guidance and softer tone"
+                onPress={() => onPersonalityChange("chill")}
+                variant={personality === "chill" ? "solid" : "ghost"}
+              />
+            </View>
           </View>
-          <PrimaryButton
-            label="Start Bluff Master"
-            note="Best when you want a slower, smarter round"
-            onPress={onPlayBluff}
-            variant="ghost"
-          />
-        </View>
+        </MotionFade>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>{stats.scope_label || "Shared deployment stats"}</Text>
-          <Text style={styles.infoBody}>
-            {stats.scope_description || "These stats are shared across the current deployed API instance."}
-          </Text>
-          <Text style={styles.infoFoot}>
-            {stats.reset_behavior || "Reset depends on backend storage, not on this device alone."}
-          </Text>
-        </View>
+        <MotionFade delay={190} offset={20}>
+          <View style={styles.catalogHeader}>
+            <Text style={styles.sectionTitle}>Playable right now</Text>
+            <Text style={styles.sectionBody}>Pick a game in one tap. Each card tells you exactly what kind of round you’re getting.</Text>
+          </View>
+        </MotionFade>
+
+        <MotionFade delay={230} offset={20}>
+          <View style={[styles.gameCard, styles.cricketCard]}>
+            <Text style={styles.gameEyebrow}>Fast Read</Text>
+            <Text style={styles.gameTitle}>Cricket Prediction</Text>
+            <Text style={styles.gameBody}>
+              Predict which run bucket lands next. Shortest path to a result, strongest fit when you want a quick win-or-miss moment.
+            </Text>
+            <View style={styles.tagRow}>
+              <Text style={styles.tag}>10-point upside</Text>
+              <Text style={styles.tag}>Instant reveal</Text>
+            </View>
+            <PrimaryButton
+              label="Start Cricket Prediction"
+              note="Pick <6, 6-10, or 10+"
+              onPress={onPlayCricket}
+            />
+          </View>
+        </MotionFade>
+
+        <MotionFade delay={270} offset={20}>
+          <View style={[styles.gameCard, styles.bluffCard]}>
+            <Text style={styles.gameEyebrow}>Mind Game</Text>
+            <Text style={styles.gameTitle}>Bluff Master</Text>
+            <Text style={styles.gameBody}>
+              Ask up to five yes/no questions and then guess the hidden number. The rule is explicit: clues may mislead you.
+            </Text>
+            <View style={styles.ruleCard}>
+              <Text style={styles.ruleLabel}>Rule</Text>
+              <Text style={styles.ruleText}>The AI’s clues may be true or false, so cross-check before you commit.</Text>
+            </View>
+            <PrimaryButton
+              label="Start Bluff Master"
+              note="Best when you want a slower, smarter round"
+              onPress={onPlayBluff}
+              variant="ghost"
+            />
+          </View>
+        </MotionFade>
+
+        <MotionFade delay={310} offset={20}>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle}>{stats.scope_label || "Shared deployment stats"}</Text>
+            <Text style={styles.infoBody}>
+              {stats.scope_description || "These stats are shared across the current deployed API instance."}
+            </Text>
+            <Text style={styles.infoFoot}>
+              {stats.reset_behavior || "Reset depends on backend storage, not on this device alone."}
+            </Text>
+          </View>
+        </MotionFade>
       </ScrollView>
     </View>
   );

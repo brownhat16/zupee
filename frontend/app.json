@@ -5,11 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "splash": {
-      "backgroundColor": "#07070c"
+      "backgroundColor": "#09141B"
     },
     "android": {
-      "package": "com.gamebuddy.ai"
+      "package": "com.gamebuddy.ai",
+      "versionCode": 1
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7b1a6010-c7e1-4c10-9d9b-ffe9678842a7"
+      }
     }
   }
 }

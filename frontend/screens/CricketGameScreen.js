@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 
 import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
+import MotionFade from "../components/MotionFade";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import { theme } from "../theme";
@@ -51,72 +52,82 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
     <View style={styles.container}>
       <ScreenBackdrop />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>FAST READ MODE</Text>
-          <Text style={styles.header}>Cricket Prediction</Text>
-          <Text style={styles.helper}>
-            Pick the run bucket you believe lands next, then see whether your read was clean or completely off.
-          </Text>
-          <View style={styles.statusRow}>
-            <View style={styles.statusPill}>
-              <Text style={styles.statusLabel}>Live score</Text>
-              <Text style={styles.statusValue}>{score ?? "--"}</Text>
-            </View>
-            <View style={styles.statusPill}>
-              <Text style={styles.statusLabel}>Last pick</Text>
-              <Text style={styles.statusValue}>{lastChoice || "None"}</Text>
+        <MotionFade delay={40} offset={22}>
+          <View style={styles.heroCard}>
+            <Text style={styles.eyebrow}>FAST READ MODE</Text>
+            <Text style={styles.header}>Cricket Prediction</Text>
+            <Text style={styles.helper}>
+              Pick the run bucket you believe lands next, then see whether your read was clean or completely off.
+            </Text>
+            <View style={styles.statusRow}>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusLabel}>Live score</Text>
+                <Text style={styles.statusValue}>{score ?? "--"}</Text>
+              </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusLabel}>Last pick</Text>
+                <Text style={styles.statusValue}>{lastChoice || "None"}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </MotionFade>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Choose a bucket</Text>
-          <PrimaryButton
-            label="<6"
-            note="Play this when you expect a low run burst"
-            onPress={() => handlePick("<6")}
-            disabled={loading}
-          />
-          <PrimaryButton
-            label="6-10"
-            note="Balanced call when you want the most natural bucket"
-            onPress={() => handlePick("6-10")}
-            variant="tint"
-            disabled={loading}
-          />
-          <PrimaryButton
-            label="10+"
-            note="High-risk call for a bigger swing"
-            onPress={() => handlePick("10+")}
-            variant="ghost"
-            disabled={loading}
-          />
-          {loading ? (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator color={theme.colors.teal} />
-              <Text style={styles.loadingText}>Reading the over and locking the result...</Text>
-            </View>
-          ) : null}
-        </View>
+        <MotionFade delay={100} offset={22}>
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Choose a bucket</Text>
+            <PrimaryButton
+              label="<6"
+              note="Play this when you expect a low run burst"
+              onPress={() => handlePick("<6")}
+              disabled={loading}
+            />
+            <PrimaryButton
+              label="6-10"
+              note="Balanced call when you want the most natural bucket"
+              onPress={() => handlePick("6-10")}
+              variant="tint"
+              disabled={loading}
+            />
+            <PrimaryButton
+              label="10+"
+              note="High-risk call for a bigger swing"
+              onPress={() => handlePick("10+")}
+              variant="ghost"
+              disabled={loading}
+            />
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={theme.colors.teal} />
+                <Text style={styles.loadingText}>Reading the over and locking the result...</Text>
+              </View>
+            ) : null}
+          </View>
+        </MotionFade>
 
-        <View style={styles.chatShell}>
-          <Text style={styles.sectionTitle}>Round feed</Text>
-          <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
-            {messages.map((message) => (
-              <ChatBubble key={message.id} text={message.text} sender={message.sender} />
-            ))}
-          </ScrollView>
-        </View>
+        <MotionFade delay={160} offset={22}>
+          <View style={styles.chatShell}>
+            <Text style={styles.sectionTitle}>Round feed</Text>
+            <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
+              {messages.map((message) => (
+                <ChatBubble key={message.id} text={message.text} sender={message.sender} />
+              ))}
+            </ScrollView>
+          </View>
+        </MotionFade>
 
         {pendingResult ? (
-          <View style={styles.resultPreview}>
-            <Text style={styles.previewTitle}>Result ready</Text>
-            <Text style={styles.previewText}>You’ve got a resolved round and updated score. Jump in when you want the summary view.</Text>
-            <PrimaryButton label="View Result" onPress={() => onShowResult(pendingResult)} />
-          </View>
+          <MotionFade delay={200} offset={18}>
+            <View style={styles.resultPreview}>
+              <Text style={styles.previewTitle}>Result ready</Text>
+              <Text style={styles.previewText}>You’ve got a resolved round and updated score. Jump in when you want the summary view.</Text>
+              <PrimaryButton label="View Result" onPress={() => onShowResult(pendingResult)} />
+            </View>
+          </MotionFade>
         ) : null}
 
-        <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={loading} />
+        <MotionFade delay={220} offset={18}>
+          <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={loading} />
+        </MotionFade>
       </ScrollView>
     </View>
   );

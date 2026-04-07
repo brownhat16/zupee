@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
+import MotionFade from "../components/MotionFade";
 import { theme } from "../theme";
 
 export default function ResultScreen({ result, onHome }) {
@@ -13,32 +14,40 @@ export default function ResultScreen({ result, onHome }) {
   return (
     <View style={styles.container}>
       <ScreenBackdrop />
-      <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>{result.title}</Text>
-        <Text style={styles.title}>Round complete.</Text>
-        <Text style={styles.message}>{result.message}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.metricBlock}>
-          <Text style={styles.metricLabel}>Score now</Text>
-          <Text style={styles.metric}>{result.score}</Text>
+      <MotionFade delay={40} offset={18}>
+        <View style={styles.heroCard}>
+          <Text style={styles.eyebrow}>{result.title}</Text>
+          <Text style={styles.title}>Round complete.</Text>
+          <Text style={styles.message}>{result.message}</Text>
         </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metricBlock}>
-          <Text style={styles.metricLabel}>Streak now</Text>
-          <Text style={styles.metric}>{result.streak}</Text>
+      </MotionFade>
+
+      <MotionFade delay={120} offset={18}>
+        <View style={styles.card}>
+          <View style={styles.metricBlock}>
+            <Text style={styles.metricLabel}>Score now</Text>
+            <Text style={styles.metric}>{result.score}</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricBlock}>
+            <Text style={styles.metricLabel}>Streak now</Text>
+            <Text style={styles.metric}>{result.streak}</Text>
+          </View>
         </View>
-      </View>
+      </MotionFade>
 
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>What to do next</Text>
-        <Text style={styles.summaryText}>
-          Go back home, check the shared scoreboard, and jump into the next round while the context is still fresh.
-        </Text>
-      </View>
+      <MotionFade delay={180} offset={18}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>What to do next</Text>
+          <Text style={styles.summaryText}>
+            Go back home, check the shared scoreboard, and jump into the next round while the context is still fresh.
+          </Text>
+        </View>
+      </MotionFade>
 
-      <PrimaryButton label="Back to Home" note="Return to the live game picker" onPress={onHome} />
+      <MotionFade delay={220} offset={18}>
+        <PrimaryButton label="Back to Home" note="Return to the live game picker" onPress={onHome} />
+      </MotionFade>
     </View>
   );
 }

@@ -12,6 +12,7 @@ import {
 
 import { askBluff, guessBluff, startBluff } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
+import MotionFade from "../components/MotionFade";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import { theme } from "../theme";
@@ -140,90 +141,102 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
     >
       <ScreenBackdrop />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>MIND GAME MODE</Text>
-          <Text style={styles.header}>Bluff Master</Text>
-          <Text style={styles.helper}>
-            Ask five yes/no questions, then commit to one guess. Product rule is explicit: clues may be true or false.
-          </Text>
-          <View style={styles.metricRow}>
-            <View style={styles.metricPill}>
-              <Text style={styles.metricLabel}>Questions left</Text>
-              <Text style={styles.metricValue}>{questionsLeft}</Text>
-            </View>
-            <View style={styles.metricPill}>
-              <Text style={styles.metricLabel}>Mode</Text>
-              <Text style={styles.metricValue}>{personality === "chill" ? "Chill" : "Savage"}</Text>
+        <MotionFade delay={40} offset={22}>
+          <View style={styles.heroCard}>
+            <Text style={styles.eyebrow}>MIND GAME MODE</Text>
+            <Text style={styles.header}>Bluff Master</Text>
+            <Text style={styles.helper}>
+              Ask five yes/no questions, then commit to one guess. Product rule is explicit: clues may be true or false.
+            </Text>
+            <View style={styles.metricRow}>
+              <View style={styles.metricPill}>
+                <Text style={styles.metricLabel}>Questions left</Text>
+                <Text style={styles.metricValue}>{questionsLeft}</Text>
+              </View>
+              <View style={styles.metricPill}>
+                <Text style={styles.metricLabel}>Mode</Text>
+                <Text style={styles.metricValue}>{personality === "chill" ? "Chill" : "Savage"}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </MotionFade>
 
-        <View style={styles.ruleCard}>
-          <Text style={styles.ruleTitle}>Best prompt style</Text>
-          <Text style={styles.ruleBody}>Use narrow yes/no checks like “is it even?”, “greater than 25?”, or “divisible by 3?”.</Text>
-        </View>
+        <MotionFade delay={90} offset={22}>
+          <View style={styles.ruleCard}>
+            <Text style={styles.ruleTitle}>Best prompt style</Text>
+            <Text style={styles.ruleBody}>Use narrow yes/no checks like “is it even?”, “greater than 25?”, or “divisible by 3?”.</Text>
+          </View>
+        </MotionFade>
 
-        <View style={styles.chatShell}>
-          <Text style={styles.sectionTitle}>Round feed</Text>
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.chatArea}
-            contentContainerStyle={styles.chatContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {messages.map((message) => (
-              <ChatBubble key={message.id} text={message.text} sender={message.sender} />
-            ))}
-          </ScrollView>
-        </View>
+        <MotionFade delay={140} offset={22}>
+          <View style={styles.chatShell}>
+            <Text style={styles.sectionTitle}>Round feed</Text>
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.chatArea}
+              contentContainerStyle={styles.chatContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {messages.map((message) => (
+                <ChatBubble key={message.id} text={message.text} sender={message.sender} />
+              ))}
+            </ScrollView>
+          </View>
+        </MotionFade>
 
-        <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>Ask the AI</Text>
-          <TextInput
-            style={styles.input}
-            value={question}
-            onChangeText={setQuestion}
-            placeholder={questionsLeft > 0 ? "Ask a yes/no question..." : "No questions left. Make your guess."}
-            placeholderTextColor={theme.colors.textMuted}
-            editable={canAsk}
-          />
-          <PrimaryButton
-            label="Send Question"
-            note={questionsLeft > 0 ? "Clarification prompts stay free when possible" : "Question limit reached"}
-            onPress={handleAsk}
-            disabled={!canAsk}
-          />
-        </View>
+        <MotionFade delay={190} offset={22}>
+          <View style={styles.panel}>
+            <Text style={styles.sectionTitle}>Ask the AI</Text>
+            <TextInput
+              style={styles.input}
+              value={question}
+              onChangeText={setQuestion}
+              placeholder={questionsLeft > 0 ? "Ask a yes/no question..." : "No questions left. Make your guess."}
+              placeholderTextColor={theme.colors.textMuted}
+              editable={canAsk}
+            />
+            <PrimaryButton
+              label="Send Question"
+              note={questionsLeft > 0 ? "Clarification prompts stay free when possible" : "Question limit reached"}
+              onPress={handleAsk}
+              disabled={!canAsk}
+            />
+          </View>
+        </MotionFade>
 
-        <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>Make the final guess</Text>
-          <TextInput
-            style={styles.input}
-            value={guess}
-            onChangeText={setGuess}
-            placeholder="Guess the number (1-50)"
-            placeholderTextColor={theme.colors.textMuted}
-            keyboardType="number-pad"
-            editable={canGuess}
-          />
-          <PrimaryButton
-            label="Lock Guess"
-            note="One number only, between 1 and 50"
-            onPress={handleGuess}
-            variant="ghost"
-            disabled={!canGuess}
-          />
-          {isBusy ? (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator color={theme.colors.teal} />
-              <Text style={styles.loadingText}>
-                {isStarting ? "Building the bluff round..." : "Resolving your move..."}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        <MotionFade delay={240} offset={22}>
+          <View style={styles.panel}>
+            <Text style={styles.sectionTitle}>Make the final guess</Text>
+            <TextInput
+              style={styles.input}
+              value={guess}
+              onChangeText={setGuess}
+              placeholder="Guess the number (1-50)"
+              placeholderTextColor={theme.colors.textMuted}
+              keyboardType="number-pad"
+              editable={canGuess}
+            />
+            <PrimaryButton
+              label="Lock Guess"
+              note="One number only, between 1 and 50"
+              onPress={handleGuess}
+              variant="ghost"
+              disabled={!canGuess}
+            />
+            {isBusy ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={theme.colors.teal} />
+                <Text style={styles.loadingText}>
+                  {isStarting ? "Building the bluff round..." : "Resolving your move..."}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </MotionFade>
 
-        <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={isSubmitting} />
+        <MotionFade delay={280} offset={18}>
+          <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={isSubmitting} />
+        </MotionFade>
       </ScrollView>
     </KeyboardAvoidingView>
   );

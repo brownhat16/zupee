@@ -2,23 +2,32 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import ScreenBackdrop from "../components/ScreenBackdrop";
+import MotionFade from "../components/MotionFade";
 import { theme } from "../theme";
 
 export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <ScreenBackdrop />
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>GAMEBUDDY AI</Text>
-      </View>
-      <Text style={styles.title}>Predict fast. Bluff smarter.</Text>
-      <Text style={styles.subtitle}>
-        A mini-game companion built like a real product, not a demo screen.
-      </Text>
-      <View style={styles.footerCard}>
-        <Text style={styles.footerLabel}>Loading live modes</Text>
-        <Text style={styles.footerValue}>Cricket Prediction + Bluff Master</Text>
-      </View>
+      <MotionFade delay={40} offset={18}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>GAMEBUDDY AI</Text>
+        </View>
+      </MotionFade>
+      <MotionFade delay={110} offset={18}>
+        <Text style={styles.title}>Predict fast. Bluff smarter.</Text>
+      </MotionFade>
+      <MotionFade delay={200} offset={18}>
+        <Text style={styles.subtitle}>
+          A mini-game companion built like a real product, not a demo screen.
+        </Text>
+      </MotionFade>
+      <MotionFade delay={280} offset={18}>
+        <View style={styles.footerCard}>
+          <Text style={styles.footerLabel}>Loading live modes</Text>
+          <Text style={styles.footerValue}>Cricket Prediction + Bluff Master</Text>
+        </View>
+      </MotionFade>
     </View>
   );
 }
