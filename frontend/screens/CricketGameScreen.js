@@ -26,6 +26,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [payoutInfo, setPayoutInfo] = useState(null);
   const [coachNote, setCoachNote] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [actualRuns, setActualRuns] = useState(null);
+  const [actualBucket, setActualBucket] = useState(null);
 
   useEffect(() => {
     chatRef.current?.scrollToEnd({ animated: true });
@@ -55,6 +57,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         payout_multiplier: result.payout_multiplier,
         latency_ms: result.latency_ms,
       });
+      setActualRuns(result.actual_runs);
+      setActualBucket(result.actual_bucket);
       // Intentionally not overwriting jayyyLastChoice with result.jayyy_choice to prevent UI flicker
       setLastLatency(result.latency_ms);
       setPayoutInfo({
@@ -120,8 +124,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <VersusBanner
                 leftLabel="You"
                 rightLabel="Jayyy"
-                score={lastChoice && jayyyLastChoice ? `${lastChoice} · ${jayyyLastChoice}` : "VS"}
-                centerLabel={`CURRENT SCORE: ${score ?? "--"}`}
+                score={score !== null ? `${score}` : "--"}
+                centerLabel="CURRENT SCORE"
               />
             </View>
             <View style={styles.statusRow}>
@@ -174,6 +178,13 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                   Last: {payoutInfo.delta > 0 ? "+" : ""}{payoutInfo.delta} (base {payoutInfo.base} ×{" "}
                   {payoutInfo.multiplier}) · Streak {payoutInfo.streak}
                 </Text>
+              </View>
+            ) : null}
+            {actualRuns !== null ? (
+              <View style={styles.actualBox}>
+                <Text style={styles.actualLabel}>Actual runs</Text>
+                <Text style={styles.actualValue}>{actualRuns} ({actualBucket})</Text>
+                <Text style={styles.actualHint}>Compare this to your pick to see the gap.</Text>
               </View>
             ) : null}
           </View>
@@ -344,6 +355,32 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 13,
     fontWeight: "700",
+  },
+  actualBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(121, 224, 200, 0.1)",
+  },
+  actualLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "800",
+  },
+  actualValue: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+  actualHint: {
+    color: theme.colors.textSoft,
+    fontSize: 12,
+    marginTop: 4,
   },
   errorRow: {
     marginTop: 12,

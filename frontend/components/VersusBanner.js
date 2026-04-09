@@ -6,8 +6,8 @@ import { theme } from "../theme";
 export default function VersusBanner({
   leftLabel = "You",
   rightLabel = "Jayyy",
-  centerLabel = "Next over",
-  score = "0-0",
+  centerLabel = "CURRENT SCORE",
+  score = "0",
 }) {
   return (
     <View style={styles.container}>
@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(121, 224, 200, 0.4)",
     overflow: "hidden",
+    minHeight: 64,
   },
   side: {
     flex: 1,
