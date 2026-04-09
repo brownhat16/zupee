@@ -151,6 +151,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         message: response.message,
         score: response.score,
         streak: response.streak,
+        commentary: response.commentary || null,
       });
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

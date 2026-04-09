@@ -41,6 +41,15 @@ export default function ResultScreen({ result, onHome }) {
         </View>
       </MotionFade>
 
+      {result.commentary ? (
+        <MotionFade delay={150} offset={16}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Jayyy’s take</Text>
+            <Text style={styles.summaryText}>{result.commentary}</Text>
+          </View>
+        </MotionFade>
+      ) : null}
+
       <MotionFade delay={180} offset={18}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>What to do next</Text>
