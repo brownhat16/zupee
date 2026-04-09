@@ -128,7 +128,10 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
             <Text style={styles.helper}>
               Pick the run bucket you believe lands next, then see whether your read was clean or completely off.
             </Text>
-            <View style={{ marginTop: 14 }}>
+            <View style={{ marginTop: 10, marginBottom: 6 }}>
+              <Text style={styles.roundLabel}>Round {rounds}</Text>
+            </View>
+            <View style={{ marginBottom: 8 }}>
               <VersusBanner
                 leftLabel="You"
                 rightLabel="Jayyy"
@@ -140,10 +143,6 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <View style={styles.statusPill}>
                 <Text style={styles.statusLabel}>Your pick</Text>
                 <Text style={styles.statusValue}>{lastChoice || "--"}</Text>
-              </View>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusLabel}>Round</Text>
-                <Text style={styles.statusValue}>{rounds}</Text>
               </View>
               <View style={[styles.statusPill, styles.actualPill]}>
                 <Text style={[styles.statusLabel, { color: theme.colors.gold }]}>Actual</Text>
@@ -333,9 +332,15 @@ const styles = StyleSheet.create({
   },
   statusValue: {
     color: theme.colors.text,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
     marginTop: 8,
+  },
+  roundLabel: {
+    color: theme.colors.text,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.6,
   },
   sectionCard: {
     marginTop: 18,
