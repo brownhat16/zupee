@@ -30,6 +30,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [errorMessage, setErrorMessage] = useState(null);
   const [actualRuns, setActualRuns] = useState(null);
   const [actualBucket, setActualBucket] = useState(null);
+  const [jayyyScore, setJayyyScore] = useState(0);
 
   useEffect(() => {
     chatRef.current?.scrollToEnd({ animated: true });
@@ -69,6 +70,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         delta: result.score_delta,
         streak: result.streak,
       });
+      const jayyyWin = instantJayyyChoice === result.actual_bucket;
+      setJayyyScore((prev) => Math.max(0, prev + (jayyyWin ? 10 : -3)));
       setCoachNote(
         result.win
           ? "You read the over right. Staying on the same bucket is reasonable unless odds shift."
@@ -127,7 +130,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <VersusBanner
                 leftLabel="You"
                 rightLabel="Jayyy"
-                score={score !== null ? `${score}` : "--"}
+                score={`${score ?? "--"} • ${jayyyScore}`}
                 centerLabel="CURRENT SCORE"
               />
             </View>
