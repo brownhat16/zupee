@@ -78,11 +78,8 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
     if (!sessionId || isBusy) {
       return;
     }
-    if (!question.trim() && (overrideText === null || !overrideText.trim())) {
-      return;
-    }
-
-    const nextQuestion = (overrideText ?? question).trim();
+    const rawInput = overrideText ?? question ?? "";
+    const nextQuestion = String(rawInput).trim();
     if (!nextQuestion) {
       return;
     }
