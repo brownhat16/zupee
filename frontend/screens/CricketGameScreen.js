@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 
@@ -14,6 +14,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [messages, setMessages] = useState([
     { id: "intro", sender: "ai", text: "Next over runs? Dekhte hain tera cricket IQ kitna sharp hai." },
   ]);
+  const chatRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [score, setScore] = useState(null);
   const [pendingResult, setPendingResult] = useState(null);
@@ -22,6 +23,10 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [payoutInfo, setPayoutInfo] = useState(null);
   const [coachNote, setCoachNote] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    chatRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
 
   const handlePick = async (choice) => {
     Haptics.selectionAsync();
@@ -158,7 +163,14 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         <MotionFade delay={160} offset={22}>
           <View style={styles.chatShell}>
             <Text style={styles.sectionTitle}>Round feed</Text>
-            <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
+            <ScrollView
+              ref={chatRef}
+              style={styles.chatArea}
+              contentContainerStyle={styles.chatContent}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => chatRef.current?.scrollToEnd({ animated: true })}
+            >
               {messages.map((message) => (
                 <ChatBubble key={message.id} text={message.text} sender={message.sender} />
               ))}
