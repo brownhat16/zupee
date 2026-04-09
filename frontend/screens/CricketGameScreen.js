@@ -82,7 +82,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         {
           id: `${Date.now()}-result`,
           sender: "ai",
-          text: `**Actual:** ${result.actual_runs} runs (${result.actual_bucket})\n**Your pick:** ${choice}\n**Jayyy's pick:** ${instantJayyyChoice}\n\n${result.reaction}`,
+          text: `Jayyy: ${result.reaction}\nActual: ${result.actual_runs} runs (${result.actual_bucket})\nYour pick: ${choice}\nJayyy's pick: ${instantJayyyChoice}`,
         },
         ...(result.streak_save_offer
           ? [
