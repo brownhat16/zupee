@@ -287,20 +287,25 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 </Text>
               ) : null}
               {coachNote ? <Text style={styles.previewCoach}>{coachNote}</Text> : null}
-              <PrimaryButton label="View Result" onPress={() => onShowResult(pendingResult)} />
-              <PrimaryButton
-                label="Play another over"
-                note="Rematch quickly with warm odds"
+              <Pressable style={[styles.bucketCard, styles.bucketMid]} onPress={() => onShowResult(pendingResult)}>
+                <Text style={styles.bucketLabel}>View Result</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.bucketCard, styles.bucketHigh]}
                 onPress={() => handlePick(lastChoice || "6-10")}
-                variant="ghost"
                 disabled={loading}
-              />
+              >
+                <Text style={styles.bucketLabel}>Play again</Text>
+                <Text style={styles.bucketNote}>Quick rematch</Text>
+              </Pressable>
             </View>
           </MotionFade>
         ) : null}
 
         <MotionFade delay={220} offset={18}>
-          <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={loading} />
+          <Pressable style={[styles.bucketCard]} onPress={onBack} disabled={loading}>
+            <Text style={styles.bucketLabel}>Back to Home</Text>
+          </Pressable>
         </MotionFade>
       </ScrollView>
       <JayDock messages={messages} />
