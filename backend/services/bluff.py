@@ -358,29 +358,30 @@ def guess_bluff_answer(
         }
 
     result = update_state(mutate)
-    if chat_session_id:
-        generate_game_commentary(
-            event_type="bluff_guess",
-            personality=personality,
-            context={
-                "game": "bluff",
-                "stage": "guess",
-                "guess": guess,
-                "correct": result["correct"],
-                "revealed_target": result["revealed_target"],
-                "score": result["score"],
-                "streak": result["streak"],
-                "lies_used": result["lies_used"],
-                "questions_asked": result["questions_asked"],
-            },
-            fallback_reply="",
-            session_id=chat_session_id,
-            record_event=(
-                f"Bluff game resolved. Player guessed {guess}. "
-                f"Correct: {result['correct']}. Hidden number was {result['revealed_target']}."
-            ),
-            instruction="Record this resolved bluff round in the session history.",
-        )
+    commentary = generate_game_commentary(
+        event_type="bluff_guess",
+        personality=personality,
+        context={
+            "game": "bluff",
+            "stage": "guess",
+            "guess": guess,
+            "correct": result["correct"],
+            "revealed_target": result["revealed_target"],
+            "score": result["score"],
+            "streak": result["streak"],
+            "lies_used": result["lies_used"],
+            "questions_asked": result["questions_asked"],
+        },
+        fallback_reply=result["message"],
+        session_id=chat_session_id,
+        record_event=(
+            f"Bluff game resolved. Player guessed {guess}. "
+            f"Correct: {result['correct']}. Hidden number was {result['revealed_target']}."
+        ),
+        instruction="Generate a short, in-character commentary for the bluff round resolution.",
+    )
+
+    result["commentary"] = commentary
     result["message"] = f"{result['message']} {result['round_explanation']}"
     del result["revealed_target"]
     del result["lies_used"]

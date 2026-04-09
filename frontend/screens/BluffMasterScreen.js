@@ -143,7 +143,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         {
           id: `${Date.now()}-jayyy-commentary`,
           sender: "ai",
-          text: `Jayyy: ${response.message}`,
+          text: `Jayyy: ${response.commentary || response.message}`,
         },
       ]);
       onShowResult({
