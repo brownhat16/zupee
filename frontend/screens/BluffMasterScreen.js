@@ -138,6 +138,14 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
       Haptics.selectionAsync();
       const response = await guessBluff(sessionId, numericGuess, personality, chatSessionId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-jayyy-commentary`,
+          sender: "ai",
+          text: `Jayyy: ${response.message}`,
+        },
+      ]);
       onShowResult({
         title: "Bluff Master",
         message: response.message,
