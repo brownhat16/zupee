@@ -20,6 +20,7 @@ import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
 import JayDock from "../components/JayDock";
+import BackButton from "../components/BackButton";
 import { theme } from "../theme";
 
 export default function BluffMasterScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -164,6 +165,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <MotionFade delay={40} offset={22}>
           <View style={styles.heroCard}>
+            <BackButton onPress={onBack} />
             <JayAvatar
               headline="Jayyy joined your bluff room"
               subline="I’ll drop tips and keep the streak alive."

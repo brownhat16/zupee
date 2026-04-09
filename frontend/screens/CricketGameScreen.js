@@ -11,6 +11,7 @@ import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
 import VersusBanner from "../components/VersusBanner";
 import JayDock from "../components/JayDock";
+import BackButton from "../components/BackButton";
 import { theme } from "../theme";
 
 export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -111,6 +112,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <MotionFade delay={40} offset={22}>
           <View style={styles.heroCard}>
+            <BackButton onPress={onBack} />
             <JayAvatar
               headline="Jayyy is in this over with you"
               subline="I’ll track streaks and cue rematches."
