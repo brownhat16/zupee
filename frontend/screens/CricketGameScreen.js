@@ -326,14 +326,14 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     fontWeight: "700",
   },
   statusValue: {
     color: theme.colors.text,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "800",
     marginTop: 8,
   },
