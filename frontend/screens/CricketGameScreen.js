@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { Pressable } from "react-native";
 
 import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
@@ -32,6 +33,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [actualBucket, setActualBucket] = useState(null);
   const [jayyyScore, setJayyyScore] = useState(0);
   const [rounds, setRounds] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     chatRef.current?.scrollToEnd({ animated: true });
@@ -74,6 +77,17 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
       const jayyyWin = instantJayyyChoice === result.actual_bucket;
       setJayyyScore((prev) => Math.max(0, prev + (jayyyWin ? 10 : -3)));
       setRounds((prev) => prev + 1);
+      setHistory((prev) => [
+        {
+          id: Date.now(),
+          your_pick: choice,
+          jayyy_pick: instantJayyyChoice,
+          actual: `${result.actual_runs} (${result.actual_bucket})`,
+          win: result.win,
+          score_after: result.score,
+        },
+        ...prev,
+      ]);
       setCoachNote(
         result.win
           ? "You read the over right. Staying on the same bucket is reasonable unless odds shift."
@@ -160,6 +174,24 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
 
         <MotionFade delay={100} offset={22}>
           <View style={styles.sectionCard}>
+            <Pressable onPress={() => setShowHistory((v) => !v)} style={styles.historyHeader}>
+              <Text style={styles.sectionTitle}>Round History</Text>
+              <Text style={styles.historyToggle}>{showHistory ? "Hide" : "Show"}</Text>
+            </Pressable>
+            {showHistory && history.length ? (
+              <View style={styles.historyList}>
+                {history.map((item) => (
+                  <View key={item.id} style={styles.historyRow}>
+                    <Text style={styles.historyCell}>You: {item.your_pick}</Text>
+                    <Text style={styles.historyCell}>Jayyy: {item.jayyy_pick}</Text>
+                    <Text style={styles.historyCell}>Actual: {item.actual}</Text>
+                    <Text style={[styles.historyCell, { color: item.win ? theme.colors.teal : theme.colors.coral }]}>
+                      {item.win ? "Win" : "Miss"}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             <Text style={styles.sectionTitle}>Choose a bucket</Text>
             <Text style={styles.payoutLegend}>
               Risk/Reward: 6-10 = +5 · {"<6"} = +10 · 10+ = +20. Streak 3+ doubles wins.
@@ -383,6 +415,33 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 13,
     fontWeight: "700",
+  },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  historyToggle: {
+    color: theme.colors.teal,
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  historyList: {
+    marginBottom: 12,
+    gap: 6,
+  },
+  historyRow: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: 8,
+    backgroundColor: "rgba(6, 16, 22, 0.5)",
+    gap: 2,
+  },
+  historyCell: {
+    color: theme.colors.text,
+    fontSize: 12,
   },
   actualBox: {
     marginTop: 12,
