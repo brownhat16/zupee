@@ -82,7 +82,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         {
           id: `${Date.now()}-result`,
           sender: "ai",
-          text: `Jayyy: ${result.reaction}`,
+          text: result.reaction,
         },
         ...(result.streak_save_offer
           ? [
