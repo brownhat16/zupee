@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import MotionFade from "../components/MotionFade";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
+import TypingIndicator from "../components/TypingIndicator";
 import { theme } from "../theme";
 
 export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -97,8 +98,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
             />
             {loading ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={theme.colors.teal} />
-                <Text style={styles.loadingText}>Reading the over and locking the result...</Text>
+                <TypingIndicator label="Reading the over and locking the result..." compact />
               </View>
             ) : null}
           </View>

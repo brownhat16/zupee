@@ -1,20 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { askBluff, guessBluff, startBluff } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import MotionFade from "../components/MotionFade";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
+import TypingIndicator from "../components/TypingIndicator";
 import { theme } from "../theme";
 
 export default function BluffMasterScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -225,10 +217,10 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
             />
             {isBusy ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={theme.colors.teal} />
-                <Text style={styles.loadingText}>
-                  {isStarting ? "Building the bluff round..." : "Resolving your move..."}
-                </Text>
+                <TypingIndicator
+                  label={isStarting ? "Building the bluff round..." : "Resolving your move..."}
+                  compact
+                />
               </View>
             ) : null}
           </View>

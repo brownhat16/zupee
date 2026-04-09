@@ -43,6 +43,10 @@ export function getStats() {
   return request("/stats");
 }
 
+export function getLeaderboard() {
+  return request("/leaderboard");
+}
+
 export function sendChat(message, personality, sessionId = null, context = null) {
   return request("/chat", {
     method: "POST",

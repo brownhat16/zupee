@@ -6,6 +6,7 @@ import ScreenBackdrop from "../components/ScreenBackdrop";
 import MotionFade from "../components/MotionFade";
 import StatsCard from "../components/StatsCard";
 import { sendChat } from "../api/client";
+import LeaderboardModal from "../components/LeaderboardModal";
 import { theme } from "../theme";
 
 export default function HomeScreen({
@@ -19,6 +20,7 @@ export default function HomeScreen({
 }) {
   const [greeting, setGreeting] = useState("Yo player, mood set kar. Kya todna hai aaj?");
   const [isGreetingLoading, setIsGreetingLoading] = useState(true);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -84,6 +86,16 @@ export default function HomeScreen({
             score={stats.score}
             streak={stats.streak}
             gamesPlayed={stats.games_played ?? 0}
+          />
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakBadgeText}>🔥 {stats.streak || 0}-day streak</Text>
+            <Text style={styles.streakBadgeSub}>Keep it alive — play one round today.</Text>
+          </View>
+          <PrimaryButton
+            label="View Leaderboard"
+            note="See how you stack against the field"
+            onPress={() => setShowLeaderboard(true)}
+            variant="ghost"
           />
         </MotionFade>
 
@@ -165,6 +177,8 @@ export default function HomeScreen({
             </Text>
           </View>
         </MotionFade>
+
+        <LeaderboardModal visible={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
       </ScrollView>
     </View>
   );
@@ -355,5 +369,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginTop: 10,
+  },
+  streakBadge: {
+    marginTop: 8,
+    marginBottom: 12,
+    backgroundColor: "rgba(244, 107, 69, 0.16)",
+    borderRadius: theme.radius.md,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  streakBadgeText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  streakBadgeSub: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 4,
   },
 });
