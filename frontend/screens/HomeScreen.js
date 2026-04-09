@@ -7,6 +7,7 @@ import MotionFade from "../components/MotionFade";
 import StatsCard from "../components/StatsCard";
 import { getLeaderboard, sendChat } from "../api/client";
 import LeaderboardModal from "../components/LeaderboardModal";
+import JayAvatar from "../components/JayAvatar";
 import { theme } from "../theme";
 
 export default function HomeScreen({
@@ -88,6 +89,10 @@ export default function HomeScreen({
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <MotionFade delay={40} offset={20}>
           <View style={styles.heroCard}>
+            <JayAvatar
+              headline="Jayyy here—let’s play together"
+              subline="Weekly AI invites. Today: Cricket Prediction · Bluff Master"
+            />
             <Text style={styles.kicker}>LIVE PRODUCT</Text>
             <Text style={styles.title}>Choose your next quick-hit game.</Text>
             <View style={styles.greetingCard}>

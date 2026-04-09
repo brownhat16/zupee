@@ -8,6 +8,7 @@ import MotionFade from "../components/MotionFade";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
+import JayAvatar from "../components/JayAvatar";
 import { theme } from "../theme";
 
 export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -96,6 +97,11 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <MotionFade delay={40} offset={22}>
           <View style={styles.heroCard}>
+            <JayAvatar
+              headline="Jayyy is in this over with you"
+              subline="I’ll track streaks and cue rematches."
+              size={52}
+            />
             <Text style={styles.eyebrow}>FAST READ MODE</Text>
             <Text style={styles.header}>Cricket Prediction</Text>
             <Text style={styles.helper}>
