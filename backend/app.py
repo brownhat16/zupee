@@ -273,14 +273,37 @@ def root() -> str:
           const resultNode = document.getElementById("result");
 
           async function postJson(path, body) {
-            resultNode.textContent = "Loading...";
-            const response = await fetch(path, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body)
-            });
-            const payload = await response.json();
-            resultNode.textContent = JSON.stringify(payload, null, 2);
+            resultNode.innerHTML = "<div style='color: var(--muted);'>Loading...</div>";
+            try {
+              const response = await fetch(path, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+              });
+              const payload = await response.json();
+              
+              let messageText = payload.intro || payload.answer || payload.commentary || payload.detail;
+              
+              if (messageText) {
+                let html = `
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <div style="background: var(--accent-2); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">AI</div>
+                    <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line); padding: 12px 16px; border-radius: 0 16px 16px 16px; color: var(--ink); box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-size: 15px; line-height: 1.5;">${messageText.replace(/\\n/g, '<br>')}</div>
+                  </div>
+                `;
+                
+                // Add remaining questions context if applicable
+                if (payload.questions_left !== undefined) {
+                  html += `<div style="margin-top: 12px; font-size: 13px; color: var(--muted); padding-left: 44px;">Questions left: <strong>${payload.questions_left}</strong></div>`;
+                }
+
+                resultNode.innerHTML = html;
+              } else {
+                resultNode.textContent = JSON.stringify(payload, null, 2);
+              }
+            } catch (err) {
+              resultNode.innerHTML = `<div style='color: var(--accent);'>Error: ${err.message}</div>`;
+            }
           }
 
           function playCricket(choice) {
