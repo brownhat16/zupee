@@ -18,6 +18,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [score, setScore] = useState(null);
   const [pendingResult, setPendingResult] = useState(null);
   const [lastChoice, setLastChoice] = useState(null);
+  const [lastLatency, setLastLatency] = useState(null);
+  const [payoutInfo, setPayoutInfo] = useState(null);
 
   const handlePick = async (choice) => {
     Haptics.selectionAsync();
@@ -32,6 +34,16 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         message: result.reaction,
         score: result.score,
         streak: result.streak,
+        payout_base: result.payout_base,
+        payout_multiplier: result.payout_multiplier,
+        latency_ms: result.latency_ms,
+      });
+      setLastLatency(result.latency_ms);
+      setPayoutInfo({
+        base: result.payout_base,
+        multiplier: result.payout_multiplier || 1,
+        delta: result.score_delta,
+        streak: result.streak,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMessages((current) => [
@@ -41,6 +53,15 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
           sender: "ai",
           text: `Actual: ${result.actual_runs} runs (${result.actual_bucket}). ${result.reaction}`,
         },
+        ...(result.streak_save_offer
+          ? [
+              {
+                id: `${Date.now()}-streak-offer`,
+                sender: "ai",
+                text: `Streak safety available: watch an ad or pay 50 coins to keep streak ${result.streak_save_offer.streak_before_loss}.`,
+              },
+            ]
+          : []),
       ]);
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -73,6 +94,10 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 <Text style={styles.statusLabel}>Last pick</Text>
                 <Text style={styles.statusValue}>{lastChoice || "None"}</Text>
               </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusLabel}>Latency</Text>
+                <Text style={styles.statusValue}>{lastLatency ? `${lastLatency} ms` : "--"}</Text>
+              </View>
             </View>
           </View>
         </MotionFade>
@@ -80,6 +105,9 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         <MotionFade delay={100} offset={22}>
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Choose a bucket</Text>
+            <Text style={styles.payoutLegend}>
+              Risk/Reward: 6-10 = +5 · {"<6"} = +10 · 10+ = +20. Streak 3+ doubles wins.
+            </Text>
             <PrimaryButton
               label="<6"
               note="Play this when you expect a low run burst"
@@ -105,6 +133,14 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 <TypingIndicator label="Reading the over and locking the result..." compact />
               </View>
             ) : null}
+            {payoutInfo ? (
+              <View style={styles.payoutRow}>
+                <Text style={styles.payoutText}>
+                  Last: {payoutInfo.delta > 0 ? "+" : ""}{payoutInfo.delta} (base {payoutInfo.base} ×{" "}
+                  {payoutInfo.multiplier}) · Streak {payoutInfo.streak}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </MotionFade>
 
@@ -123,8 +159,23 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
           <MotionFade delay={200} offset={18}>
             <View style={styles.resultPreview}>
               <Text style={styles.previewTitle}>Result ready</Text>
-              <Text style={styles.previewText}>You’ve got a resolved round and updated score. Jump in when you want the summary view.</Text>
+              <Text style={styles.previewText}>
+                You’ve got a resolved round and updated score. Jump in when you want the summary view.
+              </Text>
+              {pendingResult.payout_base ? (
+                <Text style={styles.previewMeta}>
+                  Payout {pendingResult.payout_base} × {pendingResult.payout_multiplier || 1} | Latency{" "}
+                  {pendingResult.latency_ms ?? "--"} ms
+                </Text>
+              ) : null}
               <PrimaryButton label="View Result" onPress={() => onShowResult(pendingResult)} />
+              <PrimaryButton
+                label="Play another over"
+                note="Rematch quickly with warm odds"
+                onPress={() => handlePick(lastChoice || "6-10")}
+                variant="ghost"
+                disabled={loading}
+              />
             </View>
           </MotionFade>
         ) : null}
@@ -222,6 +273,24 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 13,
   },
+  payoutLegend: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  payoutRow: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(244, 107, 69, 0.14)",
+  },
+  payoutText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   chatShell: {
     marginTop: 18,
     backgroundColor: "rgba(16, 34, 44, 0.76)",
@@ -254,5 +323,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     marginTop: 8,
+  },
+  previewMeta: {
+    color: theme.colors.text,
+    fontSize: 13,
+    marginTop: 6,
+    fontWeight: "700",
   },
 });
