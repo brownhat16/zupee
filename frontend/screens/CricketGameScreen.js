@@ -135,7 +135,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <VersusBanner
                 leftLabel="You"
                 rightLabel="Jayyy"
-                score={`${score ?? "--"} • ${jayyyScore}`}
+                score={`${score ?? 0} • ${jayyyScore}`}
                 centerLabel="CURRENT SCORE"
               />
             </View>
