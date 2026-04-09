@@ -6,7 +6,6 @@ import { Pressable } from "react-native";
 import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import MotionFade from "../components/MotionFade";
-import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
@@ -196,26 +195,32 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
             <Text style={styles.payoutLegend}>
               Risk/Reward: 6-10 = +5 · {"<6"} = +10 · 10+ = +20. Streak 3+ doubles wins.
             </Text>
-            <PrimaryButton
-              label="<6"
-              note="Play this when you expect a low run burst"
-              onPress={() => handlePick("<6")}
-              disabled={loading}
-            />
-            <PrimaryButton
-              label="6-10"
-              note="Balanced call when you want the most natural bucket"
-              onPress={() => handlePick("6-10")}
-              variant="tint"
-              disabled={loading}
-            />
-            <PrimaryButton
-              label="10+"
-              note="High-risk call for a bigger swing"
-              onPress={() => handlePick("10+")}
-              variant="ghost"
-              disabled={loading}
-            />
+            <View style={styles.bucketRow}>
+              <Pressable
+                style={[styles.bucketCard, loading && styles.bucketDisabled]}
+                disabled={loading}
+                onPress={() => handlePick("<6")}
+              >
+                <Text style={styles.bucketLabel}>{"<6"}</Text>
+                <Text style={styles.bucketNote}>Low burst</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.bucketCard, styles.bucketMid, loading && styles.bucketDisabled]}
+                disabled={loading}
+                onPress={() => handlePick("6-10")}
+              >
+                <Text style={styles.bucketLabel}>6-10</Text>
+                <Text style={styles.bucketNote}>Balanced</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.bucketCard, styles.bucketHigh, loading && styles.bucketDisabled]}
+                disabled={loading}
+                onPress={() => handlePick("10+")}
+              >
+                <Text style={styles.bucketLabel}>10+</Text>
+                <Text style={styles.bucketNote}>High risk</Text>
+              </Pressable>
+            </View>
             {loading ? (
               <View style={styles.loadingRow}>
                 <TypingIndicator label="Reading the over and locking the result..." compact />
@@ -442,6 +447,41 @@ const styles = StyleSheet.create({
   historyCell: {
     color: theme.colors.text,
     fontSize: 12,
+  },
+  bucketRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  bucketCard: {
+    flex: 1,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: "rgba(16, 34, 44, 0.86)",
+  },
+  bucketMid: {
+    backgroundColor: "rgba(242, 199, 110, 0.12)",
+  },
+  bucketHigh: {
+    backgroundColor: "rgba(244, 107, 69, 0.12)",
+  },
+  bucketDisabled: {
+    opacity: 0.55,
+  },
+  bucketLabel: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  bucketNote: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 4,
   },
   actualBox: {
     marginTop: 12,
