@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import MotionFade from "../components/MotionFade";
+import JayAvatar from "../components/JayAvatar";
 import { theme } from "../theme";
 
 export default function ResultScreen({ result, onHome }) {
@@ -16,6 +17,10 @@ export default function ResultScreen({ result, onHome }) {
       <ScreenBackdrop />
       <MotionFade delay={40} offset={18}>
         <View style={styles.heroCard}>
+          <JayAvatar
+            headline="Jayyy reviewed your round"
+            subline="Let’s queue the next invite together."
+          />
           <Text style={styles.eyebrow}>{result.title}</Text>
           <Text style={styles.title}>Round complete.</Text>
           <Text style={styles.message}>{result.message}</Text>
