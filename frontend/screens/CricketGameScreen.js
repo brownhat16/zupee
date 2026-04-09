@@ -133,6 +133,12 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 <Text style={styles.statusLabel}>Your pick</Text>
                 <Text style={styles.statusValue}>{lastChoice || "--"}</Text>
               </View>
+              <View style={[styles.statusPill, styles.actualPill]}>
+                <Text style={[styles.statusLabel, { color: theme.colors.gold }]}>Actual</Text>
+                <Text style={[styles.statusValue, { color: theme.colors.gold }]}>
+                  {actualRuns !== null ? `${actualRuns} (${actualBucket ?? "--"})` : "--"}
+                </Text>
+              </View>
               <View style={[styles.statusPill, { borderColor: theme.colors.coral }]}>
                 <Text style={[styles.statusLabel, { color: theme.colors.coral }]}>Jayyy's pick</Text>
                 <Text style={[styles.statusValue, { color: theme.colors.coral }]}>{jayyyLastChoice || "--"}</Text>
@@ -300,6 +306,10 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  actualPill: {
+    backgroundColor: "rgba(242, 199, 110, 0.12)",
+    borderColor: theme.colors.gold,
   },
   statusLabel: {
     color: theme.colors.textMuted,
