@@ -31,6 +31,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [actualRuns, setActualRuns] = useState(null);
   const [actualBucket, setActualBucket] = useState(null);
   const [jayyyScore, setJayyyScore] = useState(0);
+  const [rounds, setRounds] = useState(0);
 
   useEffect(() => {
     chatRef.current?.scrollToEnd({ animated: true });
@@ -72,6 +73,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
       });
       const jayyyWin = instantJayyyChoice === result.actual_bucket;
       setJayyyScore((prev) => Math.max(0, prev + (jayyyWin ? 10 : -3)));
+      setRounds((prev) => prev + 1);
       setCoachNote(
         result.win
           ? "You read the over right. Staying on the same bucket is reasonable unless odds shift."
@@ -138,6 +140,10 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <View style={styles.statusPill}>
                 <Text style={styles.statusLabel}>Your pick</Text>
                 <Text style={styles.statusValue}>{lastChoice || "--"}</Text>
+              </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusLabel}>Round</Text>
+                <Text style={styles.statusValue}>{rounds}</Text>
               </View>
               <View style={[styles.statusPill, styles.actualPill]}>
                 <Text style={[styles.statusLabel, { color: theme.colors.gold }]}>Actual</Text>
