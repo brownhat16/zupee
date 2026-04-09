@@ -121,7 +121,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 leftLabel="You"
                 rightLabel="Jayyy"
                 score={lastChoice && jayyyLastChoice ? `${lastChoice} · ${jayyyLastChoice}` : "VS"}
-                centerLabel={lastChoice ? "Live picks" : "Ready to play"}
+                centerLabel={`CURRENT SCORE: ${score ?? "--"}`}
               />
             </View>
             <View style={styles.statusRow}>
@@ -132,10 +132,6 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
               <View style={[styles.statusPill, { borderColor: theme.colors.coral }]}>
                 <Text style={[styles.statusLabel, { color: theme.colors.coral }]}>Jayyy's pick</Text>
                 <Text style={[styles.statusValue, { color: theme.colors.coral }]}>{jayyyLastChoice || "--"}</Text>
-              </View>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusLabel}>Score</Text>
-                <Text style={styles.statusValue}>{score ?? "--"}</Text>
               </View>
             </View>
           </View>

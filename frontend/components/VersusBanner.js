@@ -13,7 +13,7 @@ export default function VersusBanner({
     <View style={styles.container}>
       <View style={[styles.side, styles.left]}>
         <Text style={styles.sideLabel}>{leftLabel}</Text>
-        <Text style={styles.sub}>Player</Text>
+        <Text style={styles.sub} numberOfLines={1}>Player</Text>
       </View>
 
       <View style={styles.centerBlock}>
@@ -23,7 +23,7 @@ export default function VersusBanner({
 
       <View style={[styles.side, styles.right]}>
         <Text style={styles.sideLabel}>{rightLabel}</Text>
-        <Text style={styles.sub}>AI Companion</Text>
+        <Text style={styles.sub} numberOfLines={1}>AI Companion</Text>
       </View>
     </View>
   );
