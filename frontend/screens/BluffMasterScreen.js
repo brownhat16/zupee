@@ -29,6 +29,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
   const [isStarting, setIsStarting] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showStarterTips, setShowStarterTips] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -192,17 +193,28 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         <MotionFade delay={140} offset={22}>
           <View style={styles.chatShell}>
             <Text style={styles.sectionTitle}>Round feed</Text>
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.chatArea}
-            contentContainerStyle={styles.chatContent}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          >
-            {messages.map((message) => (
-              <ChatBubble key={message.id} text={message.text} sender={message.sender} />
-            ))}
-          </ScrollView>
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.chatArea}
+              contentContainerStyle={styles.chatContent}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+              onScroll={(event) => {
+                const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+                const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 40;
+                setShowScrollButton(!isNearBottom && messages.length > 6);
+              }}
+              scrollEventThrottle={16}
+            >
+              {messages.map((message) => (
+                <ChatBubble key={message.id} text={message.text} sender={message.sender} />
+              ))}
+            </ScrollView>
+            {showScrollButton ? (
+              <Pressable style={styles.scrollPill} onPress={() => scrollViewRef.current?.scrollToEnd({ animated: true })}>
+                <Text style={styles.scrollPillText}>Jump to latest</Text>
+              </Pressable>
+            ) : null}
           </View>
         </MotionFade>
 
@@ -407,6 +419,21 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 13,
     marginLeft: 10,
+  },
+  scrollPill: {
+    alignSelf: "flex-end",
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.pill,
+    backgroundColor: "rgba(244, 107, 69, 0.16)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  scrollPillText: {
+    color: theme.colors.text,
+    fontWeight: "800",
+    fontSize: 12,
   },
   suggestionRow: {
     flexDirection: "row",

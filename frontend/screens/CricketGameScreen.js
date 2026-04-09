@@ -20,6 +20,8 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [lastChoice, setLastChoice] = useState(null);
   const [lastLatency, setLastLatency] = useState(null);
   const [payoutInfo, setPayoutInfo] = useState(null);
+  const [coachNote, setCoachNote] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handlePick = async (choice) => {
     Haptics.selectionAsync();
@@ -27,6 +29,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
     setLoading(true);
     setMessages((current) => [...current, { id: `${Date.now()}-pick`, sender: "user", text: choice }]);
     try {
+      setErrorMessage(null);
       const result = await playCricket(choice, personality, chatSessionId);
       setScore(result.score);
       setPendingResult({
@@ -45,6 +48,13 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         delta: result.score_delta,
         streak: result.streak,
       });
+      setCoachNote(
+        result.win
+          ? "You read the over right. Staying on the same bucket is reasonable unless odds shift."
+          : result.actual_bucket === "10+"
+          ? "Over just spiked. Consider mid bucket 6-10 for a safer bounce-back."
+          : "Try mixing in <6 for dot-ball bursts if pace looks tight.",
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMessages((current) => [
         ...current,
@@ -65,6 +75,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
       ]);
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setErrorMessage(error.message || "Backend so raha hai. Thoda server check kar.");
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-error`, sender: "ai", text: "Backend so raha hai. Thoda server check kar." },
@@ -152,6 +163,17 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                 <ChatBubble key={message.id} text={message.text} sender={message.sender} />
               ))}
             </ScrollView>
+            {errorMessage ? (
+              <View style={styles.errorRow}>
+                <Text style={styles.errorText}>{errorMessage}</Text>
+                <PrimaryButton
+                  label="Retry last pick"
+                  onPress={() => handlePick(lastChoice || "6-10")}
+                  variant="ghost"
+                  disabled={loading}
+                />
+              </View>
+            ) : null}
           </View>
         </MotionFade>
 
@@ -168,6 +190,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
                   {pendingResult.latency_ms ?? "--"} ms
                 </Text>
               ) : null}
+              {coachNote ? <Text style={styles.previewCoach}>{coachNote}</Text> : null}
               <PrimaryButton label="View Result" onPress={() => onShowResult(pendingResult)} />
               <PrimaryButton
                 label="Play another over"
@@ -291,6 +314,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  errorRow: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: theme.radius.md,
+    backgroundColor: "rgba(255, 143, 122, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 143, 122, 0.5)",
+    gap: 8,
+  },
+  errorText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   chatShell: {
     marginTop: 18,
     backgroundColor: "rgba(16, 34, 44, 0.76)",
@@ -329,5 +366,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 6,
     fontWeight: "700",
+  },
+  previewCoach: {
+    color: theme.colors.textSoft,
+    fontSize: 13,
+    marginTop: 6,
   },
 });
