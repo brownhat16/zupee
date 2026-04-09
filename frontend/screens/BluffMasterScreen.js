@@ -19,6 +19,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
+import JayDock from "../components/JayDock";
 import { theme } from "../theme";
 
 export default function BluffMasterScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -291,6 +292,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
           <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={isSubmitting} />
         </MotionFade>
       </ScrollView>
+      <JayDock messages={messages} />
     </KeyboardAvoidingView>
   );
 }

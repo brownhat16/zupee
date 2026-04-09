@@ -10,6 +10,7 @@ import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
 import VersusBanner from "../components/VersusBanner";
+import JayDock from "../components/JayDock";
 import { theme } from "../theme";
 
 export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -255,6 +256,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
           <PrimaryButton label="Back to Home" onPress={onBack} variant="ghost" disabled={loading} />
         </MotionFade>
       </ScrollView>
+      <JayDock messages={messages} />
     </View>
   );
 }
