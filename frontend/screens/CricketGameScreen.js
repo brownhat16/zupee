@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { playCricket } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
@@ -19,6 +20,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [lastChoice, setLastChoice] = useState(null);
 
   const handlePick = async (choice) => {
+    Haptics.selectionAsync();
     setLastChoice(choice);
     setLoading(true);
     setMessages((current) => [...current, { id: `${Date.now()}-pick`, sender: "user", text: choice }]);
@@ -31,6 +33,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         score: result.score,
         streak: result.streak,
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMessages((current) => [
         ...current,
         {
@@ -40,6 +43,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         },
       ]);
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-error`, sender: "ai", text: "Backend so raha hai. Thoda server check kar." },

@@ -5,7 +5,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import MotionFade from "../components/MotionFade";
 import StatsCard from "../components/StatsCard";
-import { sendChat } from "../api/client";
+import { getLeaderboard, sendChat } from "../api/client";
 import LeaderboardModal from "../components/LeaderboardModal";
 import { theme } from "../theme";
 
@@ -21,6 +21,8 @@ export default function HomeScreen({
   const [greeting, setGreeting] = useState("Yo player, mood set kar. Kya todna hai aaj?");
   const [isGreetingLoading, setIsGreetingLoading] = useState(true);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardEntries, setLeaderboardEntries] = useState([]);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -56,6 +58,29 @@ export default function HomeScreen({
       alive = false;
     };
   }, [personality]);
+
+  useEffect(() => {
+    let active = true;
+    const preload = async () => {
+      setIsLeaderboardLoading(true);
+      try {
+        const data = await getLeaderboard();
+        if (active) {
+          setLeaderboardEntries(data.entries || []);
+        }
+      } catch {
+        // ignore preload errors; modal has retry logic
+      } finally {
+        if (active) {
+          setIsLeaderboardLoading(false);
+        }
+      }
+    };
+    preload();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <View style={styles.screen}>
@@ -96,6 +121,7 @@ export default function HomeScreen({
             note="See how you stack against the field"
             onPress={() => setShowLeaderboard(true)}
             variant="ghost"
+            disabled={isLeaderboardLoading && !leaderboardEntries.length}
           />
         </MotionFade>
 
@@ -178,7 +204,11 @@ export default function HomeScreen({
           </View>
         </MotionFade>
 
-        <LeaderboardModal visible={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
+        <LeaderboardModal
+          visible={showLeaderboard}
+          onClose={() => setShowLeaderboard(false)}
+          prefetchedEntries={leaderboardEntries}
+        />
       </ScrollView>
     </View>
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { getLeaderboard } from "../api/client";
 import { theme } from "../theme";
@@ -7,14 +8,15 @@ import TypingIndicator from "./TypingIndicator";
 
 const screenHeight = Dimensions.get("window").height;
 
-export default function LeaderboardModal({ visible, onClose }) {
-  const [entries, setEntries] = useState([]);
+export default function LeaderboardModal({ visible, onClose, prefetchedEntries = [] }) {
+  const [entries, setEntries] = useState(prefetchedEntries);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const slide = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
+      Haptics.selectionAsync();
       Animated.timing(slide, {
         toValue: 1,
         duration: 260,
@@ -30,7 +32,16 @@ export default function LeaderboardModal({ visible, onClose }) {
     }
   }, [visible, slide]);
 
+  useEffect(() => {
+    if (prefetchedEntries.length) {
+      setEntries(prefetchedEntries);
+    }
+  }, [prefetchedEntries]);
+
   const fetchLeaderboard = async () => {
+    if (!visible && entries.length) {
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

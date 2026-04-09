@@ -13,11 +13,13 @@
     "@expo/metro-runtime": "~3.2.3",
     "expo": "~51.0.28",
     "expo-device": "^55.0.13",
+    "expo-haptics": "^55.0.14",
     "expo-notifications": "^55.0.17",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-dom": "^18.2.0",
     "react-native": "0.74.5",
+    "react-native-markdown-display": "^7.0.2",
     "react-native-web": "^0.19.13"
   },
   "devDependencies": {

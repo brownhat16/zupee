@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { askBluff, guessBluff, startBluff } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
@@ -17,11 +28,13 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
   const [questionsLeft, setQuestionsLeft] = useState(5);
   const [isStarting, setIsStarting] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showStarterTips, setShowStarterTips] = useState(true);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
     setIsStarting(true);
+    setShowStarterTips(true);
     startBluff(personality, chatSessionId)
       .then((data) => {
         if (!alive) {
@@ -59,8 +72,16 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
   const canAsk = Boolean(sessionId) && !isBusy && questionsLeft > 0;
   const canGuess = Boolean(sessionId) && !isBusy;
 
-  const handleAsk = async () => {
-    if (!question.trim() || !sessionId || isBusy) {
+  const handleAsk = async (overrideText = null) => {
+    if (!sessionId || isBusy) {
+      return;
+    }
+    if (!question.trim() && (overrideText === null || !overrideText.trim())) {
+      return;
+    }
+
+    const nextQuestion = (overrideText ?? question).trim();
+    if (!nextQuestion) {
       return;
     }
     if (questionsLeft <= 0) {
@@ -71,16 +92,19 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
       return;
     }
 
-    const nextQuestion = question.trim();
     setQuestion("");
     setMessages((current) => [...current, { id: `${Date.now()}-q`, sender: "user", text: nextQuestion }]);
+    setShowStarterTips(false);
+    Keyboard.dismiss();
 
     try {
       setIsSubmitting(true);
+      Haptics.selectionAsync();
       const response = await askBluff(sessionId, nextQuestion, personality, chatSessionId);
       setQuestionsLeft(response.questions_left);
       setMessages((current) => [...current, { id: `${Date.now()}-a`, sender: "ai", text: response.answer }]);
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-e`, sender: "ai", text: error.message || "Ab sawaal band. Guess maar." },
@@ -106,9 +130,13 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
 
     setGuess("");
     setMessages((current) => [...current, { id: `${Date.now()}-guess`, sender: "user", text: `My guess: ${numericGuess}` }]);
+    setShowStarterTips(false);
+    Keyboard.dismiss();
     try {
       setIsSubmitting(true);
+      Haptics.selectionAsync();
       const response = await guessBluff(sessionId, numericGuess, personality, chatSessionId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onShowResult({
         title: "Bluff Master",
         message: response.message,
@@ -116,6 +144,7 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         streak: response.streak,
       });
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-ge`, sender: "ai", text: error.message || "Guess process fail hua." },
@@ -163,22 +192,39 @@ export default function BluffMasterScreen({ personality, chatSessionId, onBack, 
         <MotionFade delay={140} offset={22}>
           <View style={styles.chatShell}>
             <Text style={styles.sectionTitle}>Round feed</Text>
-            <ScrollView
-              ref={scrollViewRef}
-              style={styles.chatArea}
-              contentContainerStyle={styles.chatContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              {messages.map((message) => (
-                <ChatBubble key={message.id} text={message.text} sender={message.sender} />
-              ))}
-            </ScrollView>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.chatArea}
+            contentContainerStyle={styles.chatContent}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
+            {messages.map((message) => (
+              <ChatBubble key={message.id} text={message.text} sender={message.sender} />
+            ))}
+          </ScrollView>
           </View>
         </MotionFade>
 
         <MotionFade delay={190} offset={22}>
           <View style={styles.panel}>
             <Text style={styles.sectionTitle}>Ask the AI</Text>
+            {showStarterTips && questionsLeft > 0 ? (
+              <View style={styles.suggestionRow}>
+                {["Is it even?", "Is it over 25?", "Is it divisible by 3?"].map((tip) => (
+                  <Pressable
+                    key={tip}
+                    onPress={() => handleAsk(tip)}
+                    style={({ pressed }) => [
+                      styles.suggestionChip,
+                      pressed && { opacity: 0.8 },
+                    ]}
+                  >
+                    <Text style={styles.suggestionText}>{tip}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
             <TextInput
               style={styles.input}
               value={question}
@@ -361,5 +407,25 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 13,
     marginLeft: 10,
+  },
+  suggestionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  suggestionChip: {
+    backgroundColor: "rgba(244, 107, 69, 0.16)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  suggestionText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
