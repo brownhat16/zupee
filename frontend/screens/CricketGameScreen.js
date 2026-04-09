@@ -9,6 +9,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import ScreenBackdrop from "../components/ScreenBackdrop";
 import TypingIndicator from "../components/TypingIndicator";
 import JayAvatar from "../components/JayAvatar";
+import VersusBanner from "../components/VersusBanner";
 import { theme } from "../theme";
 
 export default function CricketGameScreen({ personality, chatSessionId, onBack, onShowResult }) {
@@ -20,6 +21,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
   const [score, setScore] = useState(null);
   const [pendingResult, setPendingResult] = useState(null);
   const [lastChoice, setLastChoice] = useState(null);
+  const [jayyyLastChoice, setJayyyLastChoice] = useState(null);
   const [lastLatency, setLastLatency] = useState(null);
   const [payoutInfo, setPayoutInfo] = useState(null);
   const [coachNote, setCoachNote] = useState(null);
@@ -31,12 +33,18 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
 
   const handlePick = async (choice) => {
     Haptics.selectionAsync();
+    
+    // Generate Jayyy's pick instantly on the client to solve latency blocking
+    const options = ["<6", "6-10", "10+"];
+    const instantJayyyChoice = options[Math.floor(Math.random() * options.length)];
+    
     setLastChoice(choice);
+    setJayyyLastChoice(instantJayyyChoice);
     setLoading(true);
     setMessages((current) => [...current, { id: `${Date.now()}-pick`, sender: "user", text: choice }]);
     try {
       setErrorMessage(null);
-      const result = await playCricket(choice, personality, chatSessionId);
+      const result = await playCricket(choice, instantJayyyChoice, personality, chatSessionId);
       setScore(result.score);
       setPendingResult({
         title: "Cricket Battle",
@@ -47,6 +55,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         payout_multiplier: result.payout_multiplier,
         latency_ms: result.latency_ms,
       });
+      // Intentionally not overwriting jayyyLastChoice with result.jayyy_choice to prevent UI flicker
       setLastLatency(result.latency_ms);
       setPayoutInfo({
         base: result.payout_base,
@@ -67,7 +76,7 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
         {
           id: `${Date.now()}-result`,
           sender: "ai",
-          text: `Actual: ${result.actual_runs} runs (${result.actual_bucket}). ${result.reaction}`,
+          text: `**Actual:** ${result.actual_runs} runs (${result.actual_bucket})\n**Your pick:** ${choice}\n**Jayyy's pick:** ${instantJayyyChoice}\n\n${result.reaction}`,
         },
         ...(result.streak_save_offer
           ? [
@@ -107,18 +116,26 @@ export default function CricketGameScreen({ personality, chatSessionId, onBack, 
             <Text style={styles.helper}>
               Pick the run bucket you believe lands next, then see whether your read was clean or completely off.
             </Text>
+            <View style={{ marginTop: 14 }}>
+              <VersusBanner
+                leftLabel="You"
+                rightLabel="Jayyy"
+                score={lastChoice && jayyyLastChoice ? `${lastChoice} · ${jayyyLastChoice}` : "VS"}
+                centerLabel={lastChoice ? "Live picks" : "Ready to play"}
+              />
+            </View>
             <View style={styles.statusRow}>
               <View style={styles.statusPill}>
-                <Text style={styles.statusLabel}>Live score</Text>
+                <Text style={styles.statusLabel}>Your pick</Text>
+                <Text style={styles.statusValue}>{lastChoice || "--"}</Text>
+              </View>
+              <View style={[styles.statusPill, { borderColor: theme.colors.coral }]}>
+                <Text style={[styles.statusLabel, { color: theme.colors.coral }]}>Jayyy's pick</Text>
+                <Text style={[styles.statusValue, { color: theme.colors.coral }]}>{jayyyLastChoice || "--"}</Text>
+              </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusLabel}>Score</Text>
                 <Text style={styles.statusValue}>{score ?? "--"}</Text>
-              </View>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusLabel}>Last pick</Text>
-                <Text style={styles.statusValue}>{lastChoice || "None"}</Text>
-              </View>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusLabel}>Latency</Text>
-                <Text style={styles.statusValue}>{lastLatency ? `${lastLatency} ms` : "--"}</Text>
               </View>
             </View>
           </View>
