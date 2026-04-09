@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingTop: 24,
-    paddingBottom: 32,
+    paddingBottom: 220, // reserve space for JayDock overlay
   },
   heroCard: {
     backgroundColor: "rgba(16, 34, 44, 0.82)",
